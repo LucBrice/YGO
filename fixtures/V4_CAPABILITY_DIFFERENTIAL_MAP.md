@@ -13,18 +13,18 @@ with 0 protected loss (per RECONCILIATION §V4).
 
 | # | Capability | V4 reference anchor (harness_runtime_v1.py) | Candidate guard (this chantier) | Status |
 |---|---|---|---|---|
-| 1 | Proof-Carrying Line | `validate_execution_replay`, `_validate_rc16_semantic_inputs` | `ProofPlan` content-addressed by semantic_hash+evidence_set_hash (T3/G3) | PLANNED |
-| 2 | Resource / copy ledger | `_mcb_resource_move`, `_clone_replay_state` | `ResourceLedger` zone/copy tracking + double-spend guard tests (T4/G4) | PLANNED |
-| 3 | BEFORE/AFTER snapshots | `_eval_state_precondition`, `_validate_step_state_preconditions` | Explicit `StateSnapshot` BEFORE/AFTER per action (T4/G4) | PLANNED |
-| 4 | Action Legality Proof | `_validate_action_legality` | `ActionLegalityProof` generic evaluation vs BEFORE (T5/G5) | PLANNED |
-| 5 | Compiler MCB | `_apply_mcb_action`, `_validate_mcb_bindings` | `MechanicalConsequenceBinding` compiler-owned projection (T3/G3) | PLANNED |
+| 1 | Proof-Carrying Line | `validate_execution_replay`, `_validate_rc16_semantic_inputs` | `ProofPlan` content-addressed by semantic_hash+evidence_set_hash (T3/G3) | **PARTIAL (identity CLOSED G3)** — resources/constraints/replay/claims now linked via G4/G7 additions but not yet unified into one ProofPlan object graph |
+| 2 | Resource / copy ledger | `_mcb_resource_move`, `_clone_replay_state` | `ResourceLedger` zone/copy tracking + double-spend guard tests (T4/G4) | **CLOSED G4** — `tests/test_g4_*` double-spend/use-before-produce 5/5 PASS |
+| 3 | BEFORE/AFTER snapshots | `_eval_state_precondition`, `_validate_step_state_preconditions` | Explicit `StateSnapshot` BEFORE/AFTER per action (T4/G4) | **CLOSED G4** |
+| 4 | Action Legality Proof | `_validate_action_legality` | `ActionLegalityProof` generic evaluation vs BEFORE (T5/G5) | **PARTIAL** — generic evaluation lands via `_evaluate_summon_material_binding` (G5); the dedicated `ActionLegalityProof` object (contracts.py, G1) is not yet constructed/returned as a first-class artifact |
+| 5 | Compiler MCB | `_apply_mcb_action`, `_validate_mcb_bindings` | `MechanicalConsequenceBinding` compiler-owned projection (T3/G3) | **CLOSED G1/G3** — `compiler.project_mechanical_consequences`, `tests/test_g1_*` 4/4 PASS |
 | 6 | Summon/material binding | (RC16 participant/constraint inventories, generalized here) | `SummonMaterialBinding` generic grammar, Quasar guard (T5/G5) | **CLOSED G5** — `tests/test_g5_summon_material_binding.py` 10/10 PASS, Quasar valid PROVED / invalid FAILED / E2E PROVED |
 | 7 | Dynamic material properties | `_apply_property_updates` | effective level/tuner/name bound to exact state (T6/G6) | **CLOSED G6** — real leak found+fixed, `tests/test_g6_*` 6/6 PASS |
 | 8 | Persistent restrictions | restriction/active-constraint inventories | restriction apply/release lifecycle guard (T6/G6) | **CLOSED G6** — apply/block/release/unblock + no cross-line leak |
-| 9 | Derived Claims | `_validate_derived_claims`, `_eval_derived_expr` | `DerivedClaim` recomputed from replay, certainty monotonic (T7/G7) | PLANNED |
-| 10 | Backward Proof | `_validate_rc16_backward_proof` | upstream-consumption-breaks-future-requirement check (T7/G7) | PLANNED |
-| 11 | Critical Decisions | (derived from backward proof divergence) | flagged only when legal alternatives diverge in future viability (T7/G7) | PLANNED |
-| 12 | Cold Audit | `_project_unified_cold_audit`, `_compare_mcb_cold_projection` | independent recomputation hash-compared to primary binding (T7/G7) | PLANNED |
+| 9 | Derived Claims | `_validate_derived_claims`, `_eval_derived_expr` | `DerivedClaim` recomputed from replay, certainty monotonic (T7/G7) | **CLOSED G7** — `tests/test_g7_*` 4/4 PASS |
+| 10 | Backward Proof | `_validate_rc16_backward_proof` | upstream-consumption-breaks-future-requirement check (T7/G7) | **CLOSED G7 (bounded scope)** — static resource-demand lookahead, `tests/test_g7_*` 2/2 PASS |
+| 11 | Critical Decisions | (derived from backward proof divergence) | flagged only when legal alternatives diverge in future viability (T7/G7) | **CLOSED G7** — every BackwardRequirement promoted (viability-changing by construction in this bounded scope) |
+| 12 | Cold Audit | `_project_unified_cold_audit`, `_compare_mcb_cold_projection` | independent recomputation hash-compared to primary binding (T7/G7) | **CLOSED G7 (summon bindings only)** — `tests/test_g7_*` 2/2 PASS; cold audit does not yet cover MCB/legality beyond summon materials |
 
 ## V5 parent preserve guards (must stay green, not part of the 12 V4 capabilities)
 

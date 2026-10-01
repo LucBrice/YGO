@@ -215,5 +215,18 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | G1-G5 regression re-check | G6 | `test_g1_*` .. `test_g5_*` | EXECUTED_PASS, 38/38 |
 | Authorized Diff Surface check | G6 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — same file set as G5, no NO-TOUCH violation |
 
-G7..G9 entries remain `PLANNED` until their gate executes; this table is
+### G7 — EXECUTED (T7: validator.py+compiler.py MUST, runtime.py/contracts.py MAY)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| Derived Claims (met + not-met) | G7 | `python3 tests/test_g7_claims_backward_cold_audit.py -v` (`GreenDerivedClaimMet`, `RedDerivedClaimNotMet`) | EXECUTED_PASS |
+| RED-CERTAINTY (monotonicity guard) | G7 | same run (`RedCertaintyMonotonicity`, 2 tests) | EXECUTED_PASS |
+| RED-BACKWARD-FUTURE (closure) | G7 | same run (`RedBackwardRequirementUndetectedBefore`) | EXECUTED_PASS — flags + attributes + promotes to CriticalDecision |
+| backward no-false-positive control | G7 | same run (`GreenBackwardNoFalsePositive`) | EXECUTED_PASS |
+| Cold Audit agreement (real Quasar line) | G7 | same run (`GreenColdAuditAgrees`) | EXECUTED_PASS |
+| RED-COLD-DIVERGENCE (closure) | G7 | same run (`RedColdAuditDivergence`, corrupted primary binding) | EXECUTED_PASS |
+| G1-G6 regression re-check | G7 | `test_g1_*` .. `test_g6_*` | EXECUTED_PASS, 44/44 |
+| Authorized Diff Surface check | G7 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — same file set, no NO-TOUCH violation |
+
+G8/G9 entries remain `PLANNED` until their gate executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).

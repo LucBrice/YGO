@@ -172,8 +172,30 @@ reserved). Restriction apply/block/release/unblock lifecycle and no
 cross-line leakage materialized as new regression guards (already correct
 structurally; never previously tested in this workspace).
 
+## G7 — Derived Claims / Backward Proof / Critical Decisions / Cold Audit (CLOSED, bounded scope)
+
+`current_gate=G7`. REQ-CR-022/023/024 CLOSED within the scope implemented
+(see `fixtures/V4_CAPABILITY_DIFFERENTIAL_MAP.md` for exact boundaries —
+honestly marked PARTIAL where a fuller V4-parity implementation remains
+possible: unified ProofPlan object graph, first-class ActionLegalityProof
+artifact, cold audit beyond summon bindings). 9 of 12 V4 combo capabilities
+are now CLOSED; 3 are PARTIAL (not OPEN/REGRESSED).
+
+`validator._derived_claim_for_line` recomputes a line's numeric claim from
+its own replay damage accumulator, never from a model assertion;
+`validator._claim_certainty_issue` enforces REQ-CR-023 monotonicity via the
+G1 `certainty_at_least_as_strong` helper (finally consumed).
+`validator.compute_backward_requirements` is a bounded, static,
+card-name-free lookahead: total per-resource demand across a line vs. the
+deck's total copies, attributing the violation to the action that tips
+demand past supply. Every such finding is promoted to a `CriticalDecision`.
+`validator.cold_audit_summon_bindings` independently re-derives each
+summon's binding straight from `CardFacts.effect_text` (bypassing the
+already-compiled `action.summon_binding`) and flags any signature
+divergence.
+
 ## NEXT_STEP
 
-Proceed to G7 (`validator.py`+`compiler.py`, T7): Derived Claims, Backward
-Proof/Critical Decisions, Cold Audit -- the remaining 3 of the 12 V4 combo
-capabilities.
+Proceed to G8 (`runtime.py`, T8): deterministic continuous-run controller.
+This closes the chantier's 4th and final mandatory defect
+(D5/REQ-CR-027 -- unnecessary handoff / model orchestration).

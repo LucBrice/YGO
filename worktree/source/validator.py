@@ -4,10 +4,14 @@ from collections import defaultdict
 from typing import Iterable
 
 from contracts import (
-    CanonicalDeck, Certainty, DeckSection, IssueOwner, IssueSeverity,
-    ProofStatus, StateSnapshot, ValidationIssue, ValidationReport,
+    BackwardRequirement, CanonicalDeck, Certainty, ColdAuditResult, CriticalDecision,
+    DeckSection, DerivedClaim, IssueOwner, IssueSeverity, ProofStatus, StateSnapshot,
+    ValidationIssue, ValidationReport, certainty_at_least_as_strong,
 )
 from types import MappingProxyType as _MappingProxyType
+import hashlib
+
+import compiler as _compiler
 
 
 def mechanics_for_card_type(card_type: str) -> set[str]:
@@ -617,11 +621,145 @@ def _certainty_issue(line):
     return None
 
 
+# ---- Derived Claims (REQ-CR-023) -------------------------------------------
+
+def _derived_claim_for_line(line, state: "_LineState") -> tuple[DerivedClaim | None, ValidationIssue | None]:
+    """Recomputes the line's numeric damage claim from the replay itself
+    (never trusts a model-asserted boolean). Certainty is bound to the
+    line's own declared certainty, never strengthened."""
+    if line.asserted_damage_threshold is None:
+        return None, None
+    met = state.damage >= line.asserted_damage_threshold
+    claim = DerivedClaim(
+        claim_id=f"damage-threshold:{line.line_id}",
+        line_id=line.line_id,
+        description=f"accumulated damage >= {line.asserted_damage_threshold}",
+        value=met,
+        certainty=line.certainty,
+        computed_from=(f"replay:{line.line_id}",),
+    )
+    if not met:
+        return claim, _issue(
+            "DERIVED_CLAIM_NOT_MET",
+            f"line asserts damage >= {line.asserted_damage_threshold} but replay only reaches {state.damage}",
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=line.line_id,
+        )
+    return claim, None
+
+
+def _claim_certainty_issue(claim: DerivedClaim, line) -> ValidationIssue | None:
+    """Guards REQ-CR-023 monotonicity: a derived claim can never be reported
+    more certain than the line that produced it declared itself to be."""
+    if not certainty_at_least_as_strong(line.certainty, claim.certainty):
+        return _issue(
+            "DERIVED_CLAIM_CERTAINTY_UPGRADE",
+            f"claim {claim.claim_id} certainty {claim.certainty.value} exceeds line certainty {line.certainty.value}",
+            IssueOwner.RUNTIME, ProofStatus.FAILED, line_id=line.line_id,
+        )
+    return None
+
+
+# ---- Backward Proof / Critical Decisions (REQ-CR-022) ---------------------
+
+def compute_backward_requirements(deck: CanonicalDeck) -> tuple[BackwardRequirement, ...]:
+    """Static, card-name-free lookahead: if a line's cumulative demand for a
+    named resource (CONSUME/REQUIRE consequences plus summon materials)
+    exceeds the deck's total compiled copies of it, the action that tips
+    demand past supply has a *future* requirement broken by an *earlier*
+    demanding action's choice. Flagging this here -- rather than leaving it
+    as an undifferentiated forward-replay failure -- is what makes the
+    violation backward-traceable to the action that caused it."""
+    supply: Counter = Counter()
+    for entry in deck.entries:
+        supply[entry.facts.canonical_name] += entry.qty
+
+    out: list[BackwardRequirement] = []
+    for line in deck.lines:
+        demanders: dict[str, list[str]] = defaultdict(list)
+        cumulative: Counter = Counter()
+        for action in line.actions:
+            demanded_this_action: Counter = Counter()
+            for mcb in action.consequences:
+                if mcb.operator in {"CONSUME", "REQUIRE"} and mcb.subject:
+                    demanded_this_action[mcb.subject] += mcb.qty
+            if action.kind in {"SYNCHRO_SUMMON", "XYZ_SUMMON", "LINK_SUMMON"}:
+                for m in action.materials:
+                    demanded_this_action[m] += 1
+            for name, qty in demanded_this_action.items():
+                cumulative[name] += qty
+                demanders[name].append(action.action_id)
+                total_supply = supply.get(name, 0)
+                if total_supply > 0 and cumulative[name] > total_supply:
+                    blocking = demanders[name][-2] if len(demanders[name]) >= 2 else demanders[name][0]
+                    out.append(BackwardRequirement(
+                        line_id=line.line_id,
+                        blocking_action_id=blocking,
+                        future_action_id=action.action_id,
+                        resource_name=name,
+                        message=(
+                            f"{name} is demanded {cumulative[name]} time(s) across line {line.line_id} "
+                            f"but only {total_supply} copie(s) exist in the deck"
+                        ),
+                    ))
+    return tuple(out)
+
+
+def compute_critical_decisions(backward: tuple[BackwardRequirement, ...]) -> tuple[CriticalDecision, ...]:
+    """Every BackwardRequirement found above is Critical by construction: a
+    legal alternative at `blocking_action_id` (demanding less, or a
+    different resource) would have changed whether `future_action_id`'s
+    requirement can be met."""
+    return tuple(
+        CriticalDecision(
+            line_id=b.line_id, action_id=b.blocking_action_id,
+            reason=f"consuming {b.resource_name} here breaks a later requirement in action {b.future_action_id}",
+        )
+        for b in backward
+    )
+
+
+# ---- Cold Audit (REQ-CR-024) -----------------------------------------------
+
+def _binding_signature(binding) -> str:
+    if binding is None:
+        return "NONE"
+    payload = (
+        binding.target_card, binding.summon_kind, binding.aggregate_level_equals_target,
+        tuple(
+            (g.predicate.kind, g.predicate.type_qualifier, g.predicate.exact_level, g.min_count, g.max_count)
+            for g in binding.groups
+        ),
+    )
+    return hashlib.sha256(repr(payload).encode("utf-8")).hexdigest()
+
+
+def cold_audit_summon_bindings(deck: CanonicalDeck) -> tuple[ColdAuditResult, ...]:
+    """Independently re-derives each summon's material binding straight from
+    evidence (bypassing the already-compiled action.summon_binding) and
+    compares signatures. Never trusts the primary binding's own status."""
+    facts = _facts_map(deck)
+    out: list[ColdAuditResult] = []
+    for line in deck.lines:
+        for action in line.actions:
+            if action.kind not in {"SYNCHRO_SUMMON", "XYZ_SUMMON", "LINK_SUMMON"} or not action.card_name:
+                continue
+            cold = _compiler.build_summon_material_binding(action.card_name, action.kind, facts)
+            primary_sig = _binding_signature(action.summon_binding)
+            cold_sig = _binding_signature(cold)
+            out.append(ColdAuditResult(
+                line_id=line.line_id, action_id=action.action_id,
+                primary_signature=primary_sig, cold_signature=cold_sig,
+                agrees=(primary_sig == cold_sig),
+            ))
+    return tuple(out)
+
+
 def validate_combo_lines(deck: CanonicalDeck, *, semantic_audit: Mapping[str, bool] | None = None) -> ValidationReport:
     semantic_audit = semantic_audit or {}
     facts = _facts_map(deck)
     issues: list[ValidationIssue] = []
     trace: list[StateSnapshot] = []
+    derived_claims: list[DerivedClaim] = []
 
     for line in deck.lines:
         certainty_issue = _certainty_issue(line)
@@ -633,6 +771,7 @@ def validate_combo_lines(deck: CanonicalDeck, *, semantic_audit: Mapping[str, bo
         issues.extend(start_issues)
         if start_issues and line.essential:
             continue
+        line_failed = False
         for action in line.actions:
             before = _snapshot(state, label=f"BEFORE:{action.action_id}", action_id=action.action_id)
             issue = _execute_action(state, action, facts, semantic_audit, line.line_id)
@@ -641,7 +780,34 @@ def validate_combo_lines(deck: CanonicalDeck, *, semantic_audit: Mapping[str, bo
             trace.append(after)
             if issue is not None:
                 issues.append(issue)
+                line_failed = True
                 break
+        if not line_failed:
+            claim, claim_issue = _derived_claim_for_line(line, state)
+            if claim is not None:
+                derived_claims.append(claim)
+                certainty_violation = _claim_certainty_issue(claim, line)
+                if certainty_violation is not None:
+                    issues.append(certainty_violation)
+                elif claim_issue is not None:
+                    issues.append(claim_issue)
+
+    backward_requirements = compute_backward_requirements(deck)
+    critical_decisions = compute_critical_decisions(backward_requirements)
+    for backward in backward_requirements:
+        issues.append(_issue(
+            "BACKWARD_REQUIREMENT_VIOLATION", backward.message,
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=backward.line_id,
+        ))
+
+    cold_audit = cold_audit_summon_bindings(deck)
+    for cold_result in cold_audit:
+        if not cold_result.agrees:
+            issues.append(_issue(
+                "COLD_AUDIT_DIVERGENCE",
+                f"cold recomputation diverges from the primary binding for action {cold_result.action_id}",
+                IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=cold_result.line_id,
+            ))
 
     essential_line_ids = {line.line_id for line in deck.lines if line.essential}
     essential_issues = [i for i in issues if i.line_id in essential_line_ids]
@@ -658,6 +824,9 @@ def validate_combo_lines(deck: CanonicalDeck, *, semantic_audit: Mapping[str, bo
         combos_passed=(status == ProofStatus.PROVED),
         publication_allowed=False,
         replay_trace=tuple(trace),
+        derived_claims=tuple(derived_claims),
+        critical_decisions=critical_decisions,
+        cold_audit=cold_audit,
     )
 
 
@@ -677,4 +846,7 @@ def combine_validation(legality: ValidationReport, combos: ValidationReport) -> 
         combos_passed=combos.combos_passed,
         publication_allowed=allowed,
         replay_trace=combos.replay_trace,
+        derived_claims=combos.derived_claims,
+        critical_decisions=combos.critical_decisions,
+        cold_audit=combos.cold_audit,
     )

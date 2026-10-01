@@ -22,8 +22,8 @@ Les IDs sont cumulatifs ; aucune renumérotation.
 | 005 | Environment authority separation | VERIFIED_PARENT | preserve |
 | 006 | Canonical compile | PARTIAL | étendre aux proof bindings/MCB |
 | 007 | Issue ownership/routing | VERIFIED_PARENT | preserve + controller policy |
-| 008 | Combo proof conservation | REGRESSED | restaurer V4 invariants |
-| 009 | Certainty monotonicity | VERIFIED_PARENT / STALE_ON_CHANGE | rejouer après proof changes |
+| 008 | Combo proof conservation | PARTIAL -> near-CLOSED after G7 (9/12 V4 capabilities closed; see `fixtures/V4_CAPABILITY_DIFFERENTIAL_MAP.md`) | restaurer V4 invariants |
+| 009 | Certainty monotonicity | CLOSED for derived claims (G7, REQ-CR-023); line-level certainty-upgrade guard (`_certainty_issue`) was already VERIFIED_PARENT | rejouer après proof changes |
 | 010 | Single publication gate | VERIFIED_PARENT | preserve |
 | 011 | Thin internal API | VERIFIED_PARENT | preserve |
 | 012 | Flat minimal source | VERIFIED_PARENT | preserve six modules |
@@ -102,14 +102,35 @@ Cycle de vie des restrictions (apply/bloque/release/débloque, pas de fuite inte
 regression guard (déjà correct structurellement, jamais testé auparavant).
 Preuve : `tests/test_g6_dynamic_properties_restrictions.py` 6/6 EXECUTED_PASS.
 
-### REQ-CR-022 — Backward Proof + Critical Decisions — OPEN
+### REQ-CR-022 — Backward Proof + Critical Decisions — CLOSED (G7, 2026-10-01)
 Les exigences futures sont remontées vers les choix amont ; seules les décisions qui changent la viabilité future sont Critical Decisions.
+Fermé (portée bornée) : `validator.compute_backward_requirements` — passe statique, sans carte nommée : si la demande
+cumulée d'une ligne pour une ressource dépasse les copies totales présentes dans le deck, l'action qui fait basculer
+la demande au-delà de l'offre est reliée (`BackwardRequirement`) à l'action antérieure responsable, au lieu de
+rester un simple échec forward non attribué. `compute_critical_decisions` promeut systématiquement chaque
+`BackwardRequirement` en `CriticalDecision` (par construction, réduire la demande de l'action amont change la
+viabilité future — satisfait la définition normative).
+Preuve : `tests/test_g7_claims_backward_cold_audit.py` (`RedBackwardRequirementUndetectedBefore`,
+`GreenBackwardNoFalsePositive`) 2/2 EXECUTED_PASS.
 
-### REQ-CR-023 — Derived Claims — OPEN
+### REQ-CR-023 — Derived Claims — CLOSED (G7, 2026-10-01)
 Claims numériques/booléens/ensembles dérivables sont calculés depuis replay ; la certitude finale ne peut être renforcée.
+Fermé : `SemanticLine.asserted_damage_threshold` (déclaration sémantique du seuil, ajoutée G1) +
+`validator._derived_claim_for_line` (recalcul depuis `state.damage` accumulé par le replay, jamais depuis une
+assertion du modèle) + `validator._claim_certainty_issue` (garde de monotonicité : `certainty_at_least_as_strong`,
+ajouté G1, enfin consommé). Un claim non atteint échoue fermé (`DERIVED_CLAIM_NOT_MET`) ; une tentative de
+renforcement de certitude échoue fermé (`DERIVED_CLAIM_CERTAINTY_UPGRADE`).
+Preuve : `tests/test_g7_claims_backward_cold_audit.py` (`GreenDerivedClaimMet`, `RedDerivedClaimNotMet`,
+`RedCertaintyMonotonicity`) 4/4 EXECUTED_PASS.
 
-### REQ-CR-024 — Independent Cold Audit — OPEN
+### REQ-CR-024 — Independent Cold Audit — CLOSED (G7, 2026-10-01)
 Une passe froide ne fait pas confiance aux statuts/bindings primaires et cherche divergence sémantique/mécanique sur les lignes matérielles.
+Fermé : `validator.cold_audit_summon_bindings` ré-invoque `compiler.build_summon_material_binding` directement
+depuis l'evidence (`CardFacts.effect_text`), en ignorant totalement le `action.summon_binding` déjà compilé, puis
+compare les signatures structurelles (`_binding_signature`, hash des groupes/prédicats). Une divergence produit
+`COLD_AUDIT_DIVERGENCE` (owner RUNTIME, UNVERIFIED) — jamais un PASS silencieux.
+Preuve : `tests/test_g7_claims_backward_cold_audit.py` (`GreenColdAuditAgrees` sur une vraie ligne Quasar,
+`RedColdAuditDivergence` avec un binding primaire corrompu délibérément) 2/2 EXECUTED_PASS.
 
 ### REQ-CR-025 — Multi-route CardFactsResolver — CLOSED (G2, 2026-10-01)
 Route failure != information failure. Cache/provider(s)/official/direct/web adapter/fallback ; UNRESOLVED seulement après épuisement ou conflit matériel non résolu.
