@@ -18,7 +18,7 @@ with 0 protected loss (per RECONCILIATION §V4).
 | 3 | BEFORE/AFTER snapshots | `_eval_state_precondition`, `_validate_step_state_preconditions` | Explicit `StateSnapshot` BEFORE/AFTER per action (T4/G4) | PLANNED |
 | 4 | Action Legality Proof | `_validate_action_legality` | `ActionLegalityProof` generic evaluation vs BEFORE (T5/G5) | PLANNED |
 | 5 | Compiler MCB | `_apply_mcb_action`, `_validate_mcb_bindings` | `MechanicalConsequenceBinding` compiler-owned projection (T3/G3) | PLANNED |
-| 6 | Summon/material binding | (RC16 participant/constraint inventories, generalized here) | `SummonMaterialBinding` generic grammar, Quasar guard (T5/G5) | PLANNED — mandatory RED-QUASAR-UNSUPPORTED/INVALID |
+| 6 | Summon/material binding | (RC16 participant/constraint inventories, generalized here) | `SummonMaterialBinding` generic grammar, Quasar guard (T5/G5) | **CLOSED G5** — `tests/test_g5_summon_material_binding.py` 10/10 PASS, Quasar valid PROVED / invalid FAILED / E2E PROVED |
 | 7 | Dynamic material properties | `_apply_property_updates` | effective level/tuner/name bound to exact state (T6/G6) | PLANNED |
 | 8 | Persistent restrictions | restriction/active-constraint inventories | restriction apply/release lifecycle guard (T6/G6) | PLANNED |
 | 9 | Derived Claims | `_validate_derived_claims`, `_eval_derived_expr` | `DerivedClaim` recomputed from replay, certainty monotonic (T7/G7) | PLANNED |

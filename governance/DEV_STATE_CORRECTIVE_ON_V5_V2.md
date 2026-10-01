@@ -132,9 +132,34 @@ engine already enforced no-double-spend/use-before-produce structurally —
 G4 adds the explicit regression-guard proof plus the replay artifact G5/G7
 will consume.
 
+## G5 — Generic summon/material binding + Quasar (CLOSED) — headline defect fixed
+
+`current_gate=G5`. REQ-CR-019 CLOSED, REQ-CR-015/018 PARTIAL (summon path
+closed). `compiler.parse_summon_material_clause` is a single generic,
+card-name-free grammar for Synchro/Xyz/Link material headers (predicates:
+TUNER/NON_TUNER/ANY, optional type qualifier, exact/min/max counts).
+`compiler.build_summon_material_binding` attaches the derived
+`SummonMaterialBinding` to each `CanonicalAction` at compile time.
+`validator._evaluate_summon_material_binding` replaces the old
+`_synchro_summon`/`_xyz_summon`/`_link_summon` (three near-duplicated
+regex functions) with one evaluator that only ever reads the pre-compiled
+binding against the BEFORE state.
+
+Mandatory defect #1 from `00_START_HERE.md` ("Shooting Quasar Dragon valid
+line blocked by runtime-specific Synchro wording support") is CLOSED: a
+real Quasar clause ("1 Tuner + 2 or more non-Tuner Synchro Monsters")
+previously failed with `SYNCHRO_REQUIREMENT_UNSUPPORTED` purely because the
+old regex matched one literal string; it now resolves generically. No
+"Quasar" token exists in `validator.py`/`compiler.py` (grep-verified by a
+test). Invalid Quasar materials still fail, as required by the symmetric
+positive control.
+
+Proofs made stale: `tests/test_g0_characterization.py::RedQuasarUnsupported`
+and `::GreenSynchroParentControl` (documented in the G0 file's header; both
+called the now-removed `validator._synchro_summon`).
+
 ## NEXT_STEP
 
-Proceed to G5 (`validator.py`+`compiler.py`, T5): generic
-`SummonMaterialBinding` grammar replacing the per-summon-type hardcoded
-regex, closing the mandatory Quasar RED/GREEN (REQ-CR-019). This is the
-chantier's headline defect from `00_START_HERE.md`.
+Proceed to G6 (`validator.py`+`compiler.py`, T6): dynamic material
+properties (effective level/tuner/name) and persistent restriction
+lifecycle, hardened as explicit state-bound evaluation.

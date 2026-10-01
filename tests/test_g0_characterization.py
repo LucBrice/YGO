@@ -8,7 +8,10 @@ corresponding defect is patched: a RED test that stops reproducing a fixed
 defect is expected to fail here, and that failure IS the proof the fix
 landed. `RedModelMcbSecretariat` goes stale at G1 (see
 `tests/test_g1_contracts_ownership.py` for its GREEN regression-guard
-successor). `RedQuasarUnsupported` goes stale at G5. `RedProviderFallback`
+successor). `RedQuasarUnsupported` AND `GreenSynchroParentControl` go stale
+at G5, when `validator._synchro_summon`/`_xyz_summon`/`_link_summon` are
+replaced by the single generic `validator._evaluate_summon_material_binding`
+(see `tests/test_g5_summon_material_binding.py`). `RedProviderFallback`
 goes stale at G2. Do not "fix" this file to make it pass again; that would
 be reintroducing the defect or mutating a historical proof, both forbidden.
 

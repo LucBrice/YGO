@@ -12,10 +12,10 @@ This workspace is governance-ready and **not authorized for product mutation**.
 ## Current lock
 - Parent: V5 exact
 - Functional combo reference: V4 RC16.23.8 exact
-- Target: NOT_ASSIGNED
-- GO: NO
-- Gate: PRE_GO
-- Worktree must equal parent.
+- Target: **V5.1** (GO given 2026-10-01)
+- GO: YES
+- Gate: see `control/CURRENT_GATE.txt` (progressing G0→G9; see `governance/DEV_STATE_CORRECTIVE_ON_V5_V2.md` for live status)
+- Worktree tracked in `worktree/source/`; diverges from parent only within the Authorized Diff Surface (`governance/CHANGE_SURFACE_CONTRACT_CORRECTIVE_ON_V5_V1.md`), verified at each gate via `tools/verify_workspace.py`.
 
 ## Read before any GO
 1. `governance/ENGINEERING_INTENT_CORRECTIVE_ON_V5_V2.md`
@@ -31,11 +31,11 @@ This workspace is governance-ready and **not authorized for product mutation**.
 ## Core intent
 Keep V5's small six-module architecture, restore V4 combo-proof guarantees, make card lookup multi-route, and put the entire run under a deterministic controller so the AI is called only when semantic Yu-Gi-Oh! judgment is actually required.
 
-## Mandatory defects to preserve as RED
-- Shooting Quasar Dragon valid line blocked by runtime-specific Synchro wording support.
-- primary data provider unavailable blocks although web alternatives may exist.
-- model can be asked to author low-level mechanical consequences.
-- internal recoverable friction can cause an unnecessary handoff / model orchestration.
+## Mandatory defects (tracked; see governance/DEV_STATE_CORRECTIVE_ON_V5_V2.md for live status)
+- Shooting Quasar Dragon valid line blocked by runtime-specific Synchro wording support. — **CLOSED G5**
+- primary data provider unavailable blocks although web alternatives may exist. — **CLOSED G2**
+- model can be asked to author low-level mechanical consequences. — **CLOSED G1**
+- internal recoverable friction can cause an unnecessary handoff / model orchestration. — OPEN, targeted G8
 
 ## Before GO
 Run:

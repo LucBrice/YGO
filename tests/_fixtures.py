@@ -9,6 +9,7 @@ from contracts import (  # noqa: E402
     BuildContext, BuildRequest, CanonicalAction, CanonicalCardEntry, CanonicalDeck,
     CardFacts, Certainty, CompiledLine, DeckSection,
 )
+from compiler import build_summon_material_binding  # noqa: E402
 
 
 def make_facts(
@@ -59,17 +60,21 @@ QUASAR_FACTS = make_facts(
 )
 FORMULA_SYNCHRON_FACTS = make_facts(
     "Formula Synchron", "Synchro Tuner Effect Monster", level=2, atk=200, defense=1500,
+    effect_text="When this card is Synchro Summoned: Draw 1 card.",
 )
 CLEAR_WING_FACTS = make_facts(
     "Clear Wing Synchro Dragon", "Synchro Effect Monster", level=7, atk=2500, defense=2000,
+    effect_text="Once per turn, this card gains the ability to negate a trap.",
 )
 CRYSTAL_WING_FACTS = make_facts(
     "Crystal Wing Synchro Dragon", "Synchro Effect Monster", level=3, atk=2000, defense=2100,
+    effect_text="Once per turn, this card can destroy a Spell/Trap Card.",
 )
 # A non-Synchro, non-Tuner monster: would satisfy the OLD unqualified generic
 # pattern but must NOT satisfy Quasar's "non-Tuner Synchro Monsters" predicate.
 PLAIN_NON_TUNER_FACTS = make_facts(
     "Plain Beater", "Normal Monster", level=10, atk=2400, defense=2000,
+    effect_text="A vanilla beatstick.",
 )
 
 QUASAR_MATERIAL_FACTS = {
@@ -79,6 +84,9 @@ QUASAR_MATERIAL_FACTS = {
 
 
 def quasar_synchro_action(materials: tuple[str, ...]) -> CanonicalAction:
+    binding = build_summon_material_binding(
+        QUASAR_FACTS.canonical_name, "SYNCHRO_SUMMON", {QUASAR_FACTS.canonical_name: QUASAR_FACTS},
+    )
     return CanonicalAction(
         action_id="action-quasar-synchro",
         label="Synchro Summon Shooting Quasar Dragon",
@@ -87,6 +95,7 @@ def quasar_synchro_action(materials: tuple[str, ...]) -> CanonicalAction:
         materials=materials,
         consequences=(),
         certainty=Certainty.GUARANTEED,
+        summon_binding=binding,
     )
 
 

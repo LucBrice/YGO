@@ -3,13 +3,15 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
+
+import re
 
 from card_data import CardDataService, normalize_name
 from contracts import (
     BuildContext, CanonicalAction, CanonicalCardEntry, CanonicalDeck, CardChoice,
-    CompiledLine, DeckSection, MechanicalConsequenceBinding, ProofPlan, SemanticDeckDraft,
-    SemanticEffectInterpretation,
+    CompiledLine, DeckSection, MaterialGroup, MaterialPredicate, MechanicalConsequenceBinding,
+    ProofPlan, SemanticDeckDraft, SemanticEffectInterpretation, SummonMaterialBinding,
 )
 
 
@@ -291,6 +293,12 @@ def compile_draft(draft: SemanticDeckDraft, context: BuildContext, service: Card
             action_id = _technical_id("action", action_seed)
             canonical_card = _canonical_line_name(action.card, service) if action.card else None
             canonical_materials = tuple(_canonical_line_name(name, service) for name in action.materials)
+            summon_binding = None
+            if action.kind in {"SYNCHRO_SUMMON", "XYZ_SUMMON", "LINK_SUMMON"} and canonical_card:
+                target_facts = service.get_facts(canonical_card)
+                summon_binding = build_summon_material_binding(
+                    canonical_card, action.kind, {canonical_card: target_facts},
+                )
             actions.append(CanonicalAction(
                 action_id=action_id,
                 label=action.label,
@@ -299,6 +307,7 @@ def compile_draft(draft: SemanticDeckDraft, context: BuildContext, service: Card
                 materials=canonical_materials,
                 consequences=project_mechanical_consequences(action.effects),
                 certainty=action.certainty,
+                summon_binding=summon_binding,
             ))
         lines.append(CompiledLine(
             line_id=line_id,
@@ -333,6 +342,111 @@ def compile_draft(draft: SemanticDeckDraft, context: BuildContext, service: Card
         terminal_quote=draft.terminal_quote,
         notes=draft.notes,
         proof_plan=build_proof_plan(semantic_hash=source_hash, context=context, entries=entries_tuple),
+    )
+
+
+# ---- Generic summon/material binding grammar (REQ-CR-019) -----------------
+#
+# Card-name-free: these patterns describe the *templated* wording Konami
+# uses for generic material clauses (Synchro/Xyz/Link). They never reference
+# a specific card: a header such as "1 Tuner + 2 or more non-Tuner Synchro
+# Monsters" is matched because the qualifier group below is generic, not
+# because any named-card branch exists for it.
+# A clause this grammar cannot parse yields None (never a hardcoded guess),
+# which the validator surfaces as RUNTIME/UNVERIFIED -- never as a business
+# illegality -- leaving room for semantic interpretation (G8) rather than a
+# false FAILED.
+
+_SYNCHRO_HEADER_RE = re.compile(
+    r"^(?P<tcount>\d+)\s+tuners?\s*\+\s*"
+    r"(?P<mincount>\d+)\s*(?P<plus>\+|or\s+more)?\s*"
+    r"non-tuner(?:\s+(?P<qualifier>[a-z][a-z\- ]*?))?\s+monsters?$",
+    re.IGNORECASE,
+)
+
+_XYZ_HEADER_RE = re.compile(
+    r"^(?P<count>\d+)\s+level\s+(?P<level>\d+)\s+monsters?$", re.IGNORECASE,
+)
+
+_LINK_HEADER_RE = re.compile(
+    r"^(?P<mincount>\d+)(?P<plus>\+)?\s+(?P<qualifier>[a-z][a-z\- ]*?)\s*monsters?$",
+    re.IGNORECASE,
+)
+
+
+def _material_header(effect_text: str) -> str:
+    return effect_text.strip().splitlines()[0].strip() if effect_text.strip() else ""
+
+
+def _normalize_qualifier(raw: str | None) -> str | None:
+    if raw is None:
+        return None
+    cleaned = raw.strip()
+    return cleaned.title() if cleaned else None
+
+
+def parse_summon_material_clause(effect_text: str, summon_kind: str) -> tuple[MaterialGroup, ...] | None:
+    """Deterministic, card-name-free projection of a material header into
+    generic MaterialGroup predicates. Returns None when the clause does not
+    match the supported templated grammar (never a guess, never a named-card
+    special case)."""
+    header = _material_header(effect_text)
+    if summon_kind == "SYNCHRO_SUMMON":
+        match = _SYNCHRO_HEADER_RE.fullmatch(header)
+        if not match:
+            return None
+        tcount = int(match.group("tcount"))
+        mincount = int(match.group("mincount"))
+        unbounded = match.group("plus") is not None
+        qualifier = _normalize_qualifier(match.group("qualifier"))
+        return (
+            MaterialGroup(MaterialPredicate("TUNER"), min_count=tcount, max_count=tcount),
+            MaterialGroup(
+                MaterialPredicate("NON_TUNER", type_qualifier=qualifier),
+                min_count=mincount, max_count=(None if unbounded else mincount),
+            ),
+        )
+    if summon_kind == "XYZ_SUMMON":
+        match = _XYZ_HEADER_RE.fullmatch(header)
+        if not match:
+            return None
+        count = int(match.group("count"))
+        level = int(match.group("level"))
+        return (
+            MaterialGroup(MaterialPredicate("ANY", exact_level=level), min_count=count, max_count=count),
+        )
+    if summon_kind == "LINK_SUMMON":
+        match = _LINK_HEADER_RE.fullmatch(header)
+        if not match:
+            return None
+        mincount = int(match.group("mincount"))
+        unbounded = match.group("plus") is not None
+        qualifier = _normalize_qualifier(match.group("qualifier"))
+        return (
+            MaterialGroup(
+                MaterialPredicate("ANY", type_qualifier=qualifier),
+                min_count=mincount, max_count=(None if unbounded else mincount),
+            ),
+        )
+    return None
+
+
+def build_summon_material_binding(
+    target_card: str, summon_kind: str, facts: Mapping[str, Any],
+) -> SummonMaterialBinding | None:
+    target = facts.get(target_card)
+    if target is None:
+        return None
+    groups = parse_summon_material_clause(target.effect_text, summon_kind)
+    if groups is None:
+        return None
+    return SummonMaterialBinding(
+        target_card=target_card,
+        summon_kind=summon_kind,
+        groups=groups,
+        aggregate_level_equals_target=(summon_kind == "SYNCHRO_SUMMON"),
+        source_evidence_locator=target.source_locator,
+        interpretation_origin="DERIVED_GENERIC_GRAMMAR",
     )
 
 

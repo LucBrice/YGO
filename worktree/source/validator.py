@@ -351,88 +351,147 @@ def _effective_tuner(state, name, facts):
     return "tuner" in facts[name].card_type.casefold()
 
 
-def _material_header(effect_text: str) -> str:
-    return effect_text.strip().splitlines()[0].strip() if effect_text.strip() else ""
+# ---- Generic summon/material legality (REQ-CR-018/019) --------------------
+#
+# One generic evaluator for Synchro/Xyz/Link: the material clause itself was
+# already parsed into a card-name-free SummonMaterialBinding by the compiler
+# (compiler.parse_summon_material_clause); this function only evaluates that
+# binding against the actual BEFORE state. There is no branch here for any
+# specific named monster -- every Synchro/Xyz/Link summon, however unusual
+# its material clause, is proved or refused exclusively through this generic
+# path.
+
+_TYPE_MARKER_BY_KIND = {"SYNCHRO_SUMMON": "synchro", "XYZ_SUMMON": "xyz", "LINK_SUMMON": "link"}
+_RESTRICTION_BY_KIND = {"SYNCHRO_SUMMON": "SYNCHRO", "XYZ_SUMMON": "XYZ", "LINK_SUMMON": "LINK"}
 
 
-def _synchro_summon(state, action, facts, line_id):
+def _matches_material_predicate(state, name, facts, predicate) -> bool:
+    is_tuner = _effective_tuner(state, name, facts)
+    if predicate.kind == "TUNER" and not is_tuner:
+        return False
+    if predicate.kind == "NON_TUNER" and is_tuner:
+        return False
+    if predicate.exact_level is not None and _effective_level(state, name, facts) != predicate.exact_level:
+        return False
+    if predicate.type_qualifier and predicate.type_qualifier.casefold() not in facts[name].card_type.casefold():
+        return False
+    return True
+
+
+def _evaluate_summon_material_binding(state, action, facts, line_id):
     target = action.card_name
-    if target not in facts or "synchro" not in facts[target].card_type.casefold():
-        return _issue("SYNCHRO_TARGET_INVALID", f"{target} is not a known Synchro monster", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target)
-    if "SYNCHRO" in state.restrictions:
-        return _issue("SUMMON_RESTRICTED", "Synchro Summon is currently restricted", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    header = _material_header(facts[target].effect_text)
-    if not re.fullmatch(r"1 Tuner \+ 1\+ non-Tuner monsters", header, flags=re.I):
-        return _issue("SYNCHRO_REQUIREMENT_UNSUPPORTED", f"cannot mechanically close material clause: {header!r}", IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=line_id, card_name=target)
+    kind = action.kind
+    marker = _TYPE_MARKER_BY_KIND[kind]
+    if target not in facts or marker not in facts[target].card_type.casefold():
+        return _issue(
+            f"{marker.upper()}_TARGET_INVALID", f"{target} is not a known {marker.title()} monster",
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+        )
+    restriction = _RESTRICTION_BY_KIND[kind]
+    if restriction in state.restrictions:
+        return _issue(
+            "SUMMON_RESTRICTED", f"{restriction.title()} Summon is currently restricted",
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id,
+        )
+
+    binding = action.summon_binding
+    if binding is None:
+        return _issue(
+            "SUMMON_MATERIAL_BINDING_UNRESOLVED",
+            f"cannot mechanically close material clause for {target} from the compiled binding",
+            IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=line_id, card_name=target,
+        )
+
     mats = list(action.materials)
-    if len(mats) < 2 or any(m not in facts or not _has(state, m, "FIELD") for m in mats):
-        return _issue("SYNCHRO_MATERIAL_MISSING", "Synchro materials are not all available on field", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    tuners = [_effective_tuner(state, m, facts) for m in mats]
-    levels = [_effective_level(state, m, facts) for m in mats]
-    if tuners.count(True) != 1 or any(level is None for level in levels):
-        return _issue("SYNCHRO_MATERIAL_RULE", "Synchro requires exactly one known Tuner and known material levels", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    if sum(levels) != facts[target].level:
-        return _issue("SYNCHRO_LEVEL_SUM", f"material levels sum to {sum(levels)} but target level is {facts[target].level}", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target)
+    if not mats or any(m not in facts or not _has(state, m, "FIELD") for m in mats):
+        return _issue(
+            "SUMMON_MATERIAL_MISSING", f"declared materials for {target} are not all available on field",
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+        )
+    if kind == "LINK_SUMMON" and any("link" in facts[m].card_type.casefold() for m in mats):
+        return _issue(
+            "LINK_RATING_CONTRIBUTION_UNSUPPORTED",
+            "Link monsters as Link material require explicit contribution handling",
+            IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=line_id, card_name=target,
+        )
+
+    remaining = list(mats)
+    assigned: list[list[str]] = []
+    for group in binding.groups:
+        bucket = [m for m in remaining if _matches_material_predicate(state, m, facts, group.predicate)]
+        assigned.append(bucket)
+        for m in bucket:
+            remaining.remove(m)
+    if remaining:
+        return _issue(
+            "SUMMON_MATERIAL_RULE",
+            f"material(s) {remaining} do not satisfy any required group for {target}",
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+        )
+    for group, bucket in zip(binding.groups, assigned):
+        count = len(bucket)
+        if count < group.min_count or (group.max_count is not None and count > group.max_count):
+            upper = "or more" if group.max_count is None else str(group.max_count)
+            return _issue(
+                "SUMMON_MATERIAL_RULE",
+                f"{target} requires {group.min_count}..{upper} matching materials for one group, got {count}",
+                IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+            )
+
+    if binding.aggregate_level_equals_target:
+        levels = [_effective_level(state, m, facts) for m in mats]
+        if any(level is None for level in levels):
+            return _issue(
+                "SUMMON_MATERIAL_RULE", f"not all material levels are known for {target}",
+                IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+            )
+        total = sum(levels)
+        if total != facts[target].level:
+            return _issue(
+                "SYNCHRO_LEVEL_SUM", f"material levels sum to {total} but target level is {facts[target].level}",
+                IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+            )
+
+    if kind == "LINK_SUMMON" and (facts[target].linkval is None or len(mats) != facts[target].linkval):
+        return _issue(
+            "LINK_RATING_RULE",
+            f"non-Link material count must equal target Link Rating {facts[target].linkval}",
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+        )
+
     if not _has(state, target, "EXTRA"):
-        return _issue("EXTRA_TARGET_MISSING", f"{target} is not available in Extra Deck", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target)
+        return _issue(
+            "EXTRA_TARGET_MISSING", f"{target} is not available in Extra Deck",
+            IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target,
+        )
+
+    overlay_zone = f"OVERLAY:{target.upper()}" if kind == "XYZ_SUMMON" else None
     for m in mats:
-        _move(state, m, "FIELD", "GRAVEYARD", 1)
+        _move(state, m, "FIELD", overlay_zone or "GRAVEYARD", 1)
     _move(state, target, "EXTRA", "FIELD", 1)
     return None
 
 
-def _xyz_summon(state, action, facts, line_id):
-    target = action.card_name
-    if target not in facts or "xyz" not in facts[target].card_type.casefold():
-        return _issue("XYZ_TARGET_INVALID", f"{target} is not a known Xyz monster", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target)
-    if "XYZ" in state.restrictions:
-        return _issue("SUMMON_RESTRICTED", "Xyz Summon is currently restricted", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    header = _material_header(facts[target].effect_text)
-    match = re.fullmatch(r"(\d+) Level (\d+) monsters", header, flags=re.I)
-    if not match:
-        return _issue("XYZ_REQUIREMENT_UNSUPPORTED", f"cannot mechanically close material clause: {header!r}", IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=line_id, card_name=target)
-    required, level = int(match.group(1)), int(match.group(2))
-    mats = list(action.materials)
-    if len(mats) != required or any(m not in facts or not _has(state, m, "FIELD") for m in mats):
-        return _issue("XYZ_MATERIAL_MISSING", f"Xyz target requires exactly {required} available materials", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    if any(_effective_level(state, m, facts) != level for m in mats):
-        return _issue("XYZ_LEVEL_RULE", f"all Xyz materials must be Level {level}", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    if not _has(state, target, "EXTRA"):
-        return _issue("EXTRA_TARGET_MISSING", f"{target} is not available in Extra Deck", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target)
-    overlay_zone = f"OVERLAY:{target.upper()}"
-    for m in mats:
-        _move(state, m, "FIELD", overlay_zone, 1)
-    _move(state, target, "EXTRA", "FIELD", 1)
-    return None
-
-
-def _link_summon(state, action, facts, line_id):
-    target = action.card_name
-    if target not in facts or "link" not in facts[target].card_type.casefold():
-        return _issue("LINK_TARGET_INVALID", f"{target} is not a known Link monster", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target)
-    if "LINK" in state.restrictions:
-        return _issue("SUMMON_RESTRICTED", "Link Summon is currently restricted", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    header = _material_header(facts[target].effect_text)
-    match = re.fullmatch(r"(\d+)(\+)? (.+) monsters", header, flags=re.I)
-    if not match:
-        return _issue("LINK_REQUIREMENT_UNSUPPORTED", f"cannot mechanically close material clause: {header!r}", IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=line_id, card_name=target)
-    minimum = int(match.group(1)); qualifier = match.group(3).strip().casefold()
-    mats = list(action.materials)
-    if len(mats) < minimum or any(m not in facts or not _has(state, m, "FIELD") for m in mats):
-        return _issue("LINK_MATERIAL_MISSING", f"Link target requires at least {minimum} available materials", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    if any("link" in facts[m].card_type.casefold() for m in mats):
-        return _issue("LINK_RATING_CONTRIBUTION_UNSUPPORTED", "Link monsters as Link material require explicit contribution handling", IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=line_id)
-    if facts[target].linkval is None or len(mats) != facts[target].linkval:
-        return _issue("LINK_RATING_RULE", f"non-Link material count must equal target Link Rating {facts[target].linkval}", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    if qualifier == "effect" and any("effect" not in facts[m].card_type.casefold() for m in mats):
-        return _issue("LINK_MATERIAL_TYPE", "target requires Effect Monsters", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
-    if qualifier not in {"effect", ""}:
-        return _issue("LINK_QUALIFIER_UNSUPPORTED", f"unsupported Link material qualifier {qualifier!r}", IssueOwner.RUNTIME, ProofStatus.UNVERIFIED, line_id=line_id)
-    if not _has(state, target, "EXTRA"):
-        return _issue("EXTRA_TARGET_MISSING", f"{target} is not available in Extra Deck", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=target)
-    for m in mats:
-        _move(state, m, "FIELD", "GRAVEYARD", 1)
-    _move(state, target, "EXTRA", "FIELD", 1)
+def _pendulum_summon_from_hand(state, action, facts, line_id):
+    if "PENDULUM" in state.restrictions:
+        return _issue("SUMMON_RESTRICTED", "Pendulum Summon is currently restricted", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
+    scales=[]
+    for name, qty in state.zones["PZONE"].items():
+        if qty and name in facts and facts[name].scale is not None:
+            scales.extend([facts[name].scale] * qty)
+    if len(scales) < 2:
+        return _issue("PENDULUM_SCALES_MISSING", "Pendulum Summon needs two known scales", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
+    low, high = min(scales), max(scales)
+    if low == high:
+        return _issue("PENDULUM_SCALE_RANGE", "Pendulum scales do not create a summon range", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
+    for name in action.materials:
+        if name not in facts or not _has(state, name, "HAND"):
+            return _issue("PENDULUM_MATERIAL_MISSING", f"{name} is not available in hand", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
+        level = _effective_level(state, name, facts)
+        if level is None or not low < level < high:
+            return _issue("PENDULUM_LEVEL_RANGE", f"{name} Level {level} is outside scales {low}/{high}", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id)
+    for name in action.materials:
+        _move(state, name, "HAND", "FIELD", 1)
     return None
 
 
@@ -483,14 +542,8 @@ def _execute_action(state, action, facts, semantic_audit, line_id):
             return _issue("PENDULUM_SCALE_INVALID", f"{name} has no known Pendulum Scale", IssueOwner.DATA, ProofStatus.UNVERIFIED, line_id=line_id, card_name=name)
         if not _move(state, name, "HAND", "PZONE", 1):
             return _issue("PENDULUM_SCALE_RESOURCE", f"{name} is not in hand", IssueOwner.MODEL, ProofStatus.FAILED, line_id=line_id, card_name=name)
-    elif kind == "SYNCHRO_SUMMON":
-        issue = _synchro_summon(state, action, facts, line_id)
-        if issue: return issue
-    elif kind == "XYZ_SUMMON":
-        issue = _xyz_summon(state, action, facts, line_id)
-        if issue: return issue
-    elif kind == "LINK_SUMMON":
-        issue = _link_summon(state, action, facts, line_id)
+    elif kind in {"SYNCHRO_SUMMON", "XYZ_SUMMON", "LINK_SUMMON"}:
+        issue = _evaluate_summon_material_binding(state, action, facts, line_id)
         if issue: return issue
     elif kind == "PENDULUM_SUMMON":
         issue = _pendulum_summon_from_hand(state, action, facts, line_id)

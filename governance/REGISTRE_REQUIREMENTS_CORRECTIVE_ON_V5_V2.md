@@ -32,8 +32,11 @@ Les IDs sont cumulatifs ; aucune renumérotation.
 
 ## REQ correctifs 015..027
 
-### REQ-CR-015 — Semantic authority / deterministic proof boundary — OPEN
+### REQ-CR-015 — Semantic authority / deterministic proof boundary — PARTIAL (summon/material path CLOSED at G5)
 L'IA comprend le Yu-Gi-Oh! non dérivable ; compiler/validator n'inventent pas de règles card-specific. Unsupported runtime != illégalité métier.
+G5 : pour le chemin Synchro/Xyz/Link, un clause de matériaux non parsable par la grammaire générique produit
+`SUMMON_MATERIAL_BINDING_UNRESOLVED` (owner RUNTIME, UNVERIFIED) — jamais un FAILED métier. La frontière sémantique
+pour les autres mécaniques (consequences arbitraires, rulings de texte) reste à traiter au-delà de ce chantier.
 
 ### REQ-CR-016 — Proof-Carrying Line restoration — PARTIAL (ProofPlan identity CLOSED at G3; replay/claims binding pending G4/G7)
 Toute ligne essentielle possède un ProofPlan content-addressed liant semantic line, evidence, resources, constraints, replay et claims.
@@ -54,11 +57,31 @@ exploitable par G5 (ActionLegalityProof.evaluated_against) et G7 (Cold Audit).
 Preuve : `tests/test_g4_replay_snapshots.py` 5/5 EXECUTED_PASS (double-spend REJECTED, use-before-produce REJECTED,
 BEFORE≠AFTER non conflaté, snapshots immuables, trace complète sur ligne multi-actions).
 
-### REQ-CR-018 — Generic Action Legality Proof — OPEN
+### REQ-CR-018 — Generic Action Legality Proof — PARTIAL (summon/material path CLOSED at G5)
 Chaque action matérielle est évaluée contre son BEFORE exact via facts/constraints liés ; pas de réinterprétation de texte par le proof shell.
+G5 : `validator._evaluate_summon_material_binding` évalue le `SummonMaterialBinding` compilé contre l'état FIELD
+exact (via les snapshots BEFORE de G4) ; le texte brut n'est plus réinterprété au moment de la validation
+(le parsing a lieu une seule fois, côté compiler, en G3/G5).
 
-### REQ-CR-019 — Generic summon/material binding — OPEN
+### REQ-CR-019 — Generic summon/material binding — CLOSED (G5, 2026-10-01) — MANDATORY DEFECT #1 FIXED
 Les exigences de matériaux deviennent des bindings génériques. **Quasar valide** doit être prouvable ; **Quasar invalide** doit échouer ; aucun hardcode Quasar.
+Fermé : `compiler.parse_summon_material_clause` (grammaire générique Synchro/Xyz/Link, `MaterialGroup`/`MaterialPredicate`,
+qualificatifs de type génériques dont "Synchro"/"Effect") + `compiler.build_summon_material_binding` (compiler-owned,
+attaché à `CanonicalAction.summon_binding`) + `validator._evaluate_summon_material_binding` (un seul évaluateur
+générique remplaçant les 3 anciennes fonctions `_synchro_summon`/`_xyz_summon`/`_link_summon` à triple regex quasi dupliquée).
+Shooting Quasar Dragon ("1 Tuner + 2 or more non-Tuner Synchro Monsters") n'est matché par aucune branche nommée :
+il passe par la même grammaire générique que tout autre Synchro.
+Preuve : `tests/test_g5_summon_material_binding.py` 10/10 EXECUTED_PASS, incluant :
+- Quasar valide (1 Tuner Lv2 + 2 non-Tuner Synchro Lv7/Lv3, somme=12) → **PROVED**;
+- Quasar invalide (matériau non-Synchro, compte insuffisant, somme de niveaux fausse) → **FAILED** avec code métier
+  (jamais `*_UNSUPPORTED`);
+- grep statique confirmant l'absence du mot "quasar" dans `validator.py`/`compiler.py` (aucun branchement nommé);
+- Xyz et Link toujours prouvés via le même évaluateur générique (non-régression);
+- clause non parsable → `SUMMON_MATERIAL_BINDING_UNRESOLVED` (RUNTIME/UNVERIFIED, jamais une illégalité métier);
+- **Quasar end-to-end** : ligne complète (starters → matériaux amenés sur le terrain par effet → Synchro Summon)
+  prouvée via `validate_combo_lines` (status PROVED).
+Mutation test ad hoc (non committé, voir session) : désactiver le check de qualificatif de type fait échouer
+2/10 tests — le mutant est tué.
 
 ### REQ-CR-020 — Compiler-owned Mechanical Consequence Binding — CLOSED (G1, 2026-10-01)
 `REQUIRE/MOVE/CONSUME/PRODUCE/...` et équivalents dérivables sont compiler-owned et interdits dans le payload normal du modèle.

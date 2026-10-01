@@ -192,5 +192,18 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | G1/G2/G3 regression re-check | G4 | `test_g1_contracts_ownership.py` + `test_g2_card_facts_resolver.py` + `test_g3_proof_plan.py` | EXECUTED_PASS, 23/23 |
 | Authorized Diff Surface check | G4 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed` adds `validator.py` (T4 MUST-TOUCH), no NO-TOUCH violation |
 
-G5..G9 entries remain `PLANNED` until their gate executes; this table is
+### G5 — EXECUTED (T5: validator.py+compiler.py MUST, contracts.py/card_data.py MAY) — MANDATORY QUASAR DEFECT CLOSED
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| RED-QUASAR-UNSUPPORTED (closure) | G5 | `python3 tests/test_g5_summon_material_binding.py -v` (`GreenQuasarValidIsProved`, 2 tests) | EXECUTED_PASS — valid Quasar line PROVED, no named-card branch (grep-verified) |
+| RED-QUASAR-INVALID (closure/positive control) | G5 | same run (`RedQuasarInvalidFails`, 3 tests) | EXECUTED_PASS — wrong type/count/level-sum all FAILED with a business code, never `*_UNSUPPORTED` |
+| Xyz/Link regression guard (no capability lost) | G5 | same run (`GreenGenericGrammarCoversXyzAndLink`, 3 tests) | EXECUTED_PASS |
+| unparseable clause -> RUNTIME not MODEL | G5 | same run (`RedUnparseableClauseIsRuntimeNotIllegal`) | EXECUTED_PASS |
+| **Quasar E2E** (mandatory per PRE-GO G5) | G5 | same run (`GreenQuasarEndToEnd`) | EXECUTED_PASS — full `validate_combo_lines` run, `status=PROVED` |
+| mutation (qualifier-check disabled) | G5 | ad hoc script, reverted after run (see session; ScheduleWakeup-less verification) | EXECUTED_PASS — mutant killed, 2/10 tests fail when the generic type-qualifier check is disabled |
+| G1-G4 regression re-check | G5 | `test_g1_*` .. `test_g4_*` | EXECUTED_PASS, 28/28 |
+| Authorized Diff Surface check | G5 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed` unchanged set {card_data.py,compiler.py,contracts.py,runtime.py,validator.py} ⊆ T5 MUST/MAY, no NO-TOUCH violation |
+
+G6..G9 entries remain `PLANNED` until their gate executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).
