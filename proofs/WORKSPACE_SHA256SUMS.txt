@@ -90,8 +90,11 @@ d7f909ab6780a6753d7c8387ea708d6d4b7bb150d23f4171bf9b080f821cc5f9  worktree/sourc
 37bb0b59a168d516dbed5f8254ac354aada5e7885c822a67132c336e4e041331  worktree/source/VALIDATION_PILOTAGE_LIGNES_DECKS_PERSONNAGES_V1.md
 edfdb9a0a0deccd886363739e3918481a3e0ea913ac947d28da418f72a40861f  worktree/source/VALIDATION_PROGRESSION_NARRATIVE_V5.md
 ac2ab3fa6252547065e049d2399e3e492fd5a47d62775300d60a254108d9b805  worktree/source/api.py
-0b44eaa25e1fb26e5d183680a878f76d1f1d822c1b9934a8c149692e38cbcd3b  worktree/source/card_data.py
-57f4ddc8e660956f4fb1c641d914cf78cb6d58100c253e44ca2a6b517a4d00ee  worktree/source/compiler.py
-75e6ab98b9616a21ce19fc1026e686f08d140933940d5135f8e97f6e7ae591ed  worktree/source/contracts.py
-5754c2985635bdfc063468b3981b09194dab57747024552ba0bde7ddbf54b60c  worktree/source/runtime.py
-c651b6863357cbcc6f26a1671b96389770cb432569012baea2fe41f3938b4ad2  worktree/source/validator.py
+2d92a2a962ea8f7d7294612c5a63a157ca44196f03a1281737172ff7f482889d  worktree/source/card_data.py
+faaf6d6b67caf41f57d7b9a1c3229d29b3e9fa840ff5fbc223c58cac5c9c9e66  worktree/source/compiler.py
+2f3474d124f7720324e3402fbd588799f04180d5b9f18efea0036ee040191cd2  worktree/source/contracts.py
+f968b99abe14b3d3e2a96990b7b091a5ddbb48e86e0c78ff5b8ad2611d97568e  worktree/source/runtime.py
+06488daa9d4c37f08ac7a1daaef1ba4426c68dada65e3c2d6fc022f76faf234f  worktree/source/validator.py
+# worktree/source/*.py hashes above reflect candidate V5.1 @ gate G9 (post-chantier).
+# api.py is unchanged (byte-identical to baseline_v5/source/api.py) per NO-TOUCH for this chantier.
+# baseline_v5/source/*.py and reference_v4/source/*.py hashes above remain the original parent/reference identities and were never recomputed (never touched).

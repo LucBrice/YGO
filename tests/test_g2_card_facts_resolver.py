@@ -6,7 +6,6 @@ from __future__ import annotations
 
 import tempfile
 import unittest
-from pathlib import Path
 
 from _bootstrap import use_worktree_source
 
@@ -15,7 +14,7 @@ use_worktree_source()
 from card_data import CardDataError, CardDataService, CardFactsResolver, CardFactsCache  # noqa: E402
 from contracts import CardFacts  # noqa: E402
 
-SOURCE_DIR = Path(__file__).resolve().parents[1] / "worktree" / "source"
+SOURCE_DIR = str(use_worktree_source())
 
 
 def _facts(name: str, **kw) -> CardFacts:

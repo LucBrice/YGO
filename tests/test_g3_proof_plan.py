@@ -7,7 +7,6 @@ from __future__ import annotations
 import dataclasses
 import tempfile
 import unittest
-from pathlib import Path
 
 from _bootstrap import use_worktree_source
 
@@ -17,7 +16,7 @@ from card_data import CardDataService  # noqa: E402
 from compiler import compile_draft, evidence_set_hash, proof_plan_is_fresh  # noqa: E402
 from contracts import BuildContext, BuildRequest, CardFacts, semantic_draft_from_mapping  # noqa: E402
 
-SOURCE_DIR = Path(__file__).resolve().parents[1] / "worktree" / "source"
+SOURCE_DIR = str(use_worktree_source())
 
 
 class FakeProvider:

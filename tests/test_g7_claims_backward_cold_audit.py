@@ -56,6 +56,30 @@ class GreenDerivedClaimMet(unittest.TestCase):
         self.assertEqual(claim.certainty, Certainty.GUARANTEED)
 
 
+class RedCertaintyNotStrengthenedThroughFullWiring(unittest.TestCase):
+    """Integration-level companion to RedCertaintyMonotonicity: a mutation
+    check (disabling line.certainty binding in _derived_claim_for_line,
+    forcing GUARANTEED unconditionally) proved the unit-level guard test
+    alone does not exercise the real validate_combo_lines wiring end to
+    end, since every other G7 fixture happened to use a GUARANTEED line.
+    This closes that gap with a CONDITIONAL line."""
+
+    def test_conditional_line_claim_stays_conditional_through_validate_combo_lines(self):
+        line = CompiledLine(
+            line_id="L", title="t", starters=(), actions=(_damage_action("a1", 500),),
+            claim="probably reaches lethal", certainty=Certainty.CONDITIONAL, essential=True,
+            asserted_damage_threshold=500,
+        )
+        deck = _deck_with_line(line, [])
+        report = validator.validate_combo_lines(deck, semantic_audit={"a1": True})
+        self.assertEqual(report.status, ProofStatus.PROVED, report.issues)
+        self.assertEqual(len(report.derived_claims), 1)
+        self.assertEqual(
+            report.derived_claims[0].certainty, Certainty.CONDITIONAL,
+            "a CONDITIONAL line's derived claim must never be reported as GUARANTEED",
+        )
+
+
 class RedDerivedClaimNotMet(unittest.TestCase):
     def test_damage_threshold_not_met_fails_closed(self):
         line = CompiledLine(

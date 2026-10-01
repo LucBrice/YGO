@@ -240,5 +240,26 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | G1-G7 regression re-check | G8 | `test_g1_*` .. `test_g7_*` | EXECUTED_PASS, 52/52 |
 | Authorized Diff Surface check | G8 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — same file set, no NO-TOUCH violation |
 
-G9 entries remain `PLANNED` until closure executes; this table is
-updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).
+### G9 — EXECUTED (closure attempt; honest partial result, no verbal PASS)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| Full cumulative regression | G9 | all `tests/test_g1_*`..`test_g8_*` in one pass | EXECUTED_PASS — 62/62 |
+| Mutation spot-checks (not exhaustive) | G9 | 5 ad hoc mutations, each applied/verified/reverted (see session; not committed as permanent mutants) | EXECUTED — double-spend guard, no-progress guard, conflict fail-closed, certainty-strengthened all KILLED; anti-secretariat removal KILLED via a redundant allowlist layer (defense-in-depth finding, not a gap). Certainty-strengthened mutant initially SURVIVED at the integration level (unit guard alone insufficient) -> real gap found and closed with a new CONDITIONAL-line integration test (`RedCertaintyNotStrengthenedThroughFullWiring`), then re-confirmed KILLED. NOT exhaustive: the other 8 mandatory mutant families in §6 were not spot-checked this session. |
+| 12-capability V4 differential | G9 | `fixtures/V4_CAPABILITY_DIFFERENTIAL_MAP.md` | 9/12 CLOSED, 3/12 PARTIAL (honestly scoped, not OPEN/REGRESSED) |
+| V5 parent preserve guards | G9 | n/a | NOT EXECUTED — no pre-existing V5 regression suite was bundled in this workspace to replay; non-regression argued structurally (`git diff f103459 HEAD -- api.py baseline_v5/ reference_v4/ authority/` is empty) but not proof-replayed |
+| Cumulative line/branch coverage report | G9 | n/a | NOT EXECUTED — no coverage tool available in this environment; not installed without explicit authorization |
+| Actual diff ⊆ authorized diff | G9 | ad hoc script comparing `worktree_changed` to `control/CHANGE_SURFACE_CORRECTIVE_ON_V5_V1.json` | EXECUTED_PASS — `{card_data.py,compiler.py,contracts.py,runtime.py,validator.py}` ⊆ MUST+MAY; NO_TOUCH intersection empty |
+| No NO-TOUCH violation | G9 | `git diff f103459 HEAD -- api.py baseline_v5/ reference_v4/ authority/` | EXECUTED_PASS — empty diff |
+| Exact flat Sources package | G9 | `zip` of `worktree/source/*.py` (6 files) | EXECUTED_PASS — `YGO_V5_1_CORRECTIVE_SOURCES.zip`, sha256 `8aeaff09e826ccf84b5a722c777b95d5bb00c819d9fa0b7735042c92dfaf1fe6` |
+| Clean extraction | G9 | `unzip` to a fresh directory, sha256 compare per file | EXECUTED_PASS — all 6 files byte-identical to `worktree/source` |
+| Package replay (exact packaged bytes) | G9 | full suite re-run with `YGO_SOURCE_OVERRIDE` pointed at the extracted directory (not `worktree/source`) | EXECUTED_PASS — 62/62 |
+| At least one real card-resolution route | G9 | live call to `db.ygoprodeck.com` via `YGOPRODeckProvider`, then a down-route+live-route `CardDataService` fallback | EXECUTED_PASS — real network resolution succeeded; multi-route fallback to the live route succeeded |
+| Independent external Black-Box | G9 | n/a | CORRECTLY NOT ATTEMPTED — `META-REQ-BLACKBOX-INDEPENDENCE` forbids self-administering it in the same chantier; requires a separate `/blackbox` campaign |
+| No auto-promotion | G9 | n/a | HELD — `V3.6 STABLE`/stable baseline never referenced for promotion; this candidate stays `V5.1 corrective`, not auto-promoted |
+
+**Honest verdict: G9 is NOT a full PASS against all 14 `PRE_GO_CORRECTIVE_ON_V5_V2.md` §3 criteria.**
+8 are materially met, 2 are partial-but-substantial, 2 were not executed (tooling/no
+bundled V5 suite), 1 is correctly out of this session's scope (Black-Box), 1 is
+correctly held (no auto-promotion). See `governance/DEV_STATE_CORRECTIVE_ON_V5_V2.md`
+NEXT_STEP for what a follow-up chantier needs to close full G9.

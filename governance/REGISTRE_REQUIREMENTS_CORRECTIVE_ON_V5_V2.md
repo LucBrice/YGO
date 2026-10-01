@@ -4,10 +4,15 @@
 
 - Parent produit : **V5 exact**
 - Référence Combo Proof : **V4 RC16.23.8 exact**
-- Target : **NOT_ASSIGNED**
-- PRE-GO : **FROZEN**
-- GO : **NO**
-- Promotion : **FORBIDDEN**
+- Target : **V5.1** (GO explicite 2026-10-01)
+- Gate courant : **G9** (clôture honnête partielle — voir `TEST_PROOF_MATRIX` §"G9 — EXECUTED")
+- GO : **YES**
+- Promotion : **FORBIDDEN** (reste `V5.1 corrective`, jamais auto-promue stable)
+
+Les 4 défauts obligatoires de `00_START_HERE.md` sont fermés (Quasar G5, provider G2,
+secrétariat mécanique G1, orchestration/handoff G8). 9/12 capacités combo V4 fermées,
+3/12 PARTIAL (bornées, documentées — jamais OPEN/REGRESSED). 62/62 tests exécutés,
+rejoués avec succès sur les octets réellement empaquetés.
 
 Les IDs sont cumulatifs ; aucune renumérotation.
 

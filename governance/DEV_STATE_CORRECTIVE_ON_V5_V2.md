@@ -214,11 +214,54 @@ single-call-auto-repair invariants were already structurally correct
 `owner=MODEL` issues ever trigger `self.model(...)`) and are now proven
 materially rather than assumed.
 
+## G9 — Closure attempt (EXECUTED; honest partial result)
+
+`current_gate=G9`. Full detail: `governance/TEST_PROOF_MATRIX_CORRECTIVE_ON_V5_V2.md`
+"G9 — EXECUTED" table and `proofs/G9_PACKAGE_REPLAY_2026-10-01.md`.
+
+**Materially met:** full cumulative regression (62/62, G1..G8), Authorized
+Diff Surface verified both structurally (`verify_workspace.py`) and against
+the JSON contract (`{card_data.py,compiler.py,contracts.py,runtime.py,validator.py}`
+⊆ MUST+MAY, NO_TOUCH intersection empty), zero NO-TOUCH violation (`git diff`
+against `api.py`/`baseline_v5/`/`reference_v4/`/`authority/` since the
+initial workspace import is empty), exact flat Sources package built,
+cleanly extracted (byte-identical, sha256-verified), full suite replayed
+successfully against the extracted packaged bytes (62/62, proving the
+*actual delivered bytes* work, not just the working tree), and at least one
+real external card-resolution route confirmed live (including a genuine
+down-route→live-route fallback) rather than only mocked.
+
+**Partial / not executed (honestly, not glossed over):**
+- 5 ad hoc mutation spot-checks run (double-spend, no-progress guard,
+  conflict fail-closed, certainty-strengthened, anti-secretariat removal)
+  — all killed; the certainty-strengthened mutant initially survived at
+  integration level, which found and closed a real coverage gap
+  (`RedCertaintyNotStrengthenedThroughFullWiring`). The other 8 mandatory
+  mutant families from `TEST_PROOF_MATRIX` §6 were not spot-checked.
+- 12-capability V4 differential: 9/12 CLOSED, 3/12 PARTIAL with explicit,
+  documented scope boundaries (unified ProofPlan object graph, first-class
+  ActionLegalityProof artifact, cold audit beyond summon bindings).
+- V5 parent preserve guards: no pre-existing V5 regression suite was
+  bundled in this workspace to replay; non-regression argued structurally
+  (NO-TOUCH diff empty) but not proof-replayed against a real guard suite.
+- Cumulative line/branch coverage %: not measured (no coverage tool
+  available; not installed without explicit authorization).
+- Independent external Black-Box: correctly not attempted in this same
+  chantier (`META-REQ-BLACKBOX-INDEPENDENCE`).
+
+**This is not a fabricated PASS.** Per `authority/METHODOLOGIE_DEV_YGO_V1.md`
+§7/§9 ("un PASS doit être matériel", "ne jamais inventer un PASS"), G9 is
+reported as a substantial, materially-proven corrective candidate with all
+4 mandatory defects closed — not as a full 14/14 G9 closure.
+
 ## NEXT_STEP
 
-Proceed to G9: differential closure. Fill the remaining honest gaps in the
-12-capability map (unified ProofPlan object graph, first-class
-ActionLegalityProof artifact, cold audit beyond summon bindings) only if a
-failing proof demands it; otherwise run full cumulative regression, verify
-the Authorized Diff Surface end to end, package `worktree/source` as flat
-Sources, extract clean, and replay the full suite on the packaged bytes.
+A follow-up chantier (new session, same target `V5.1` or a patch version)
+should, in cost/risk order: (1) run the remaining 8 mandatory mutant
+families; (2) decide whether the 3 PARTIAL V4 capabilities need full
+closure or are an accepted, documented scope boundary for V5.1; (3) obtain
+or write a V5 parent regression suite to replay; (4) add a coverage tool
+and report cumulative line/branch coverage; (5) only after all of the
+above, request an independent Black-Box campaign (`/blackbox`) — never
+self-administered by the implementation chantier. Promotion beyond
+`V5.1 corrective` requires a new explicit user decision regardless.
