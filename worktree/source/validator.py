@@ -5,8 +5,9 @@ from typing import Iterable
 
 from contracts import (
     CanonicalDeck, Certainty, DeckSection, IssueOwner, IssueSeverity,
-    ProofStatus, ValidationIssue, ValidationReport,
+    ProofStatus, StateSnapshot, ValidationIssue, ValidationReport,
 )
+from types import MappingProxyType as _MappingProxyType
 
 
 def mechanics_for_card_type(card_type: str) -> set[str]:
@@ -200,6 +201,29 @@ def _take_overlay(state: _LineState, name: str, qty: int, destination: str) -> b
         if remaining == 0:
             return True
     return False
+
+
+def _snapshot(state: "_LineState", *, label: str, action_id: str) -> StateSnapshot:
+    """Immutable BEFORE/AFTER snapshot (REQ-CR-017). Captured by value: later
+    mutation of `state` can never retroactively change an already-returned
+    snapshot, so BEFORE and AFTER can never be conflated into the same
+    object."""
+    zones = _MappingProxyType({
+        zone: _MappingProxyType(dict(counter))
+        for zone, counter in state.zones.items()
+        if any(counter.values())
+    })
+    properties = _MappingProxyType({
+        f"{name}\x1f{prop}": value for (name, prop), value in state.properties.items()
+    })
+    return StateSnapshot(
+        label=label,
+        action_id=action_id,
+        zones=zones,
+        properties=properties,
+        restrictions=tuple(sorted(state.restrictions)),
+        damage=state.damage,
+    )
 
 
 def _issue(code, message, owner, status, *, line_id=None, card_name=None, data=None):
@@ -519,6 +543,7 @@ def validate_combo_lines(deck: CanonicalDeck, *, semantic_audit: Mapping[str, bo
     semantic_audit = semantic_audit or {}
     facts = _facts_map(deck)
     issues: list[ValidationIssue] = []
+    trace: list[StateSnapshot] = []
 
     for line in deck.lines:
         certainty_issue = _certainty_issue(line)
@@ -531,7 +556,11 @@ def validate_combo_lines(deck: CanonicalDeck, *, semantic_audit: Mapping[str, bo
         if start_issues and line.essential:
             continue
         for action in line.actions:
+            before = _snapshot(state, label=f"BEFORE:{action.action_id}", action_id=action.action_id)
             issue = _execute_action(state, action, facts, semantic_audit, line.line_id)
+            after = _snapshot(state, label=f"AFTER:{action.action_id}", action_id=action.action_id)
+            trace.append(before)
+            trace.append(after)
             if issue is not None:
                 issues.append(issue)
                 break
@@ -550,6 +579,7 @@ def validate_combo_lines(deck: CanonicalDeck, *, semantic_audit: Mapping[str, bo
         legality_passed=False,
         combos_passed=(status == ProofStatus.PROVED),
         publication_allowed=False,
+        replay_trace=tuple(trace),
     )
 
 
@@ -568,4 +598,5 @@ def combine_validation(legality: ValidationReport, combos: ValidationReport) -> 
         legality_passed=legality.legality_passed,
         combos_passed=combos.combos_passed,
         publication_allowed=allowed,
+        replay_trace=combos.replay_trace,
     )

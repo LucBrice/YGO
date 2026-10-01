@@ -122,8 +122,19 @@ an evidence (CardFacts) change — closing a real gap in the pre-existing
 `is_fresh()` helper, which only ever checked the semantic hash. `compile_draft`
 now attaches `proof_plan` to every `CanonicalDeck` it returns.
 
+## G4 — Resource replay / BEFORE-AFTER snapshots (CLOSED)
+
+`current_gate=G4`. `worktree_changed` adds `validator.py` for the first
+time (T4 MUST-TOUCH). REQ-CR-017 CLOSED. `validator._snapshot` + the new
+`ValidationReport.replay_trace` field formalize immutable BEFORE/AFTER
+`StateSnapshot`s around every material action; the pre-existing zone-Counter
+engine already enforced no-double-spend/use-before-produce structurally —
+G4 adds the explicit regression-guard proof plus the replay artifact G5/G7
+will consume.
+
 ## NEXT_STEP
 
-Proceed to G4 (`validator.py` BEFORE/AFTER snapshots + double-spend/
-use-before-produce guards, T4). This is the first gate that touches
-`validator.py`; still no named-card branches.
+Proceed to G5 (`validator.py`+`compiler.py`, T5): generic
+`SummonMaterialBinding` grammar replacing the per-summon-type hardcoded
+regex, closing the mandatory Quasar RED/GREEN (REQ-CR-019). This is the
+chantier's headline defect from `00_START_HERE.md`.

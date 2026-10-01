@@ -181,5 +181,16 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | full build_deck pipeline smoke (PROVED path with ProofPlan attached) | G3 | ad hoc script via `Runtime.build_deck` | EXECUTED_PASS — `status=PROVED`, `proof_plan.proof_plan_hash` populated |
 | Authorized Diff Surface check | G3 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=["card_data.py","compiler.py","contracts.py","runtime.py"]`, no NO-TOUCH violation |
 
-G4..G9 entries remain `PLANNED` until their gate executes; this table is
+### G4 — EXECUTED (T4: validator.py MUST, contracts.py/compiler.py MAY — first validator.py touch)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| RED-DOUBLE-SPEND (closure/regression guard) | G4 | `python3 tests/test_g4_replay_snapshots.py -v` (`RedDoubleSpend`) | EXECUTED_PASS — second OBTAIN of the same exhausted resource FAILS `RESOURCE_CONSERVATION` |
+| RED-USE-BEFORE-PRODUCE (closure/regression guard) | G4 | same run (`RedUseBeforeProduce`) | EXECUTED_PASS — consuming from an empty FIELD before any producer ran FAILS |
+| RED-BEFORE-AFTER (closure/regression guard) | G4 | same run (`GreenBeforeAfterNotConflated`, 2 tests) | EXECUTED_PASS — BEFORE snapshot never reflects its own action's mutation; snapshots are `MappingProxyType`-immutable |
+| full-line replay trace unit | G4 | same run (`GreenTraceCoversWholeLine`) | EXECUTED_PASS — 2 actions -> 4 ordered BEFORE/AFTER snapshots |
+| G1/G2/G3 regression re-check | G4 | `test_g1_contracts_ownership.py` + `test_g2_card_facts_resolver.py` + `test_g3_proof_plan.py` | EXECUTED_PASS, 23/23 |
+| Authorized Diff Surface check | G4 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed` adds `validator.py` (T4 MUST-TOUCH), no NO-TOUCH violation |
+
+G5..G9 entries remain `PLANNED` until their gate executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).

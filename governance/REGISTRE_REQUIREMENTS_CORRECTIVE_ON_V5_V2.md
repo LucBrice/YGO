@@ -44,8 +44,15 @@ ce que l'ancien `is_fresh()` (qui ne vérifiait que `source_hash`) ne détectait
 Preuve : `tests/test_g3_proof_plan.py` 5/5 EXECUTED_PASS.
 Reste OPEN pour fermeture complète de 016 : liaison explicite resources/constraints/replay/claims (G4/G7).
 
-### REQ-CR-017 — Exact ResourceLedger + BEFORE/AFTER — OPEN
+### REQ-CR-017 — Exact ResourceLedger + BEFORE/AFTER — CLOSED (G4, 2026-10-01)
 Replay séquentiel avec quantité/zone/copies exactes, no double-spend, use-after-produce et snapshots immuables à chaque action matérielle.
+Fermé : `validator._snapshot` capture un `contracts.StateSnapshot` immuable (`MappingProxyType`) avant et après
+chaque action matérielle (`validate_combo_lines` alimente `ValidationReport.replay_trace`). Le moteur de zones
+(`_move`/`_has`, déjà présent) garantissait déjà structurellement l'absence de double-spend/use-before-produce
+(vérification de quantité avant mutation) ; G4 matérialise cette garantie en preuve testée + en artefact de replay
+exploitable par G5 (ActionLegalityProof.evaluated_against) et G7 (Cold Audit).
+Preuve : `tests/test_g4_replay_snapshots.py` 5/5 EXECUTED_PASS (double-spend REJECTED, use-before-produce REJECTED,
+BEFORE≠AFTER non conflaté, snapshots immuables, trace complète sur ligne multi-actions).
 
 ### REQ-CR-018 — Generic Action Legality Proof — OPEN
 Chaque action matérielle est évaluée contre son BEFORE exact via facts/constraints liés ; pas de réinterprétation de texte par le proof shell.

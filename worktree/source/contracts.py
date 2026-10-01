@@ -416,6 +416,7 @@ class ValidationReport:
     derived_claims: tuple[DerivedClaim, ...] = ()
     critical_decisions: tuple[CriticalDecision, ...] = ()
     cold_audit: tuple[ColdAuditResult, ...] = ()
+    replay_trace: tuple[StateSnapshot, ...] = ()
 
 
 @dataclass(frozen=True)
