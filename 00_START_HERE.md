@@ -35,7 +35,7 @@ Keep V5's small six-module architecture, restore V4 combo-proof guarantees, make
 - Shooting Quasar Dragon valid line blocked by runtime-specific Synchro wording support. — **CLOSED G5**
 - primary data provider unavailable blocks although web alternatives may exist. — **CLOSED G2**
 - model can be asked to author low-level mechanical consequences. — **CLOSED G1**
-- internal recoverable friction can cause an unnecessary handoff / model orchestration. — OPEN, targeted G8
+- internal recoverable friction can cause an unnecessary handoff / model orchestration. — **CLOSED G8**
 
 ## Before GO
 Run:

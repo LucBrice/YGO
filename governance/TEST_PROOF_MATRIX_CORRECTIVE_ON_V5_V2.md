@@ -228,5 +228,17 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | G1-G6 regression re-check | G7 | `test_g1_*` .. `test_g6_*` | EXECUTED_PASS, 44/44 |
 | Authorized Diff Surface check | G7 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — same file set, no NO-TOUCH violation |
 
-G8/G9 entries remain `PLANNED` until their gate executes; this table is
+### G8 — EXECUTED (T8: runtime.py MUST, api.py/card_data.py/compiler.py/contracts.py MAY) — MANDATORY DEFECT #4 CLOSED
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| `_issue_fingerprint`/`_should_repair` unit | G8 | `python3 tests/test_g8_continuous_run_controller.py -v` (`UnitFingerprintAndRepairDecision`, 4 tests) | EXECUTED_PASS |
+| positive control #17 (one-call auto-repair) | G8 | same run (`GreenOneCallAutoRepair`) | EXECUTED_PASS — 2 model calls (build+repair), zero handoff |
+| RED-NO-PROGRESS-LOOP (closure) | G8 | same run (`RedNoProgressLoopStopsEarly`) | EXECUTED_PASS — stuck model stops before exhausting a 5-repair budget |
+| positive control #18 (DATA fallback, zero AI repair calls) | G8 | same run (`GreenDataFallbackZeroAiCalls`, 2 tests) | EXECUTED_PASS — exactly 1 model call whether fallback succeeds or all routes exhaust |
+| RED-PUBLICATION-BYPASS (closure) | G8 | same run (`GreenPublicationGateIntegration`) | EXECUTED_PASS — mocked stale ProofPlan blocks PROVED |
+| G1-G7 regression re-check | G8 | `test_g1_*` .. `test_g7_*` | EXECUTED_PASS, 52/52 |
+| Authorized Diff Surface check | G8 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — same file set, no NO-TOUCH violation |
+
+G9 entries remain `PLANNED` until closure executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).

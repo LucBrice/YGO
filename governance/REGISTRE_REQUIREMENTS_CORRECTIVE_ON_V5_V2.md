@@ -17,7 +17,7 @@ Les IDs sont cumulatifs ; aucune renumérotation.
 |---|---|---|---|
 | 001 | Reliable deck product | REGRESSED | restaurer preuve combo + data resolver |
 | 002 | Automatic information transport | VERIFIED_PARENT | préserver + étendre data lineage |
-| 003 | No AI secretariat | PARTIAL/REGRESSED | retirer consequences/flow control model-owned |
+| 003 | No AI secretariat | CLOSED (G1 mechanical consequences + G8 flow control: model never chooses phase/retry/provider/pass/publish) | retirer consequences/flow control model-owned |
 | 004 | Automatic web card facts | CLOSED G2 (was REGRESSED) | multi-route resolver landed, see REQ-CR-025 |
 | 005 | Environment authority separation | VERIFIED_PARENT | preserve |
 | 006 | Canonical compile | PARTIAL | étendre aux proof bindings/MCB |
@@ -144,8 +144,21 @@ Preuve : `tests/test_g2_card_facts_resolver.py` 6/6 EXECUTED_PASS.
 ### REQ-CR-026 — Complete V4→candidate combo differential baseline — OPEN
 Les 12 capacités V4 suivantes doivent chacune avoir fixture + guard + résultat différentiel : PCL, ledger, snapshots, action legality, MCB, summon binding, dynamic properties, restrictions, claims, backward, critical decisions, cold audit.
 
-### REQ-CR-027 — Deterministic Continuous Run Orchestrator — OPEN
+### REQ-CR-027 — Deterministic Continuous Run Orchestrator — CLOSED (G8, 2026-10-01) — MANDATORY DEFECT #4 FIXED
 Un seul controller runtime possède le run complet. AI-call policy fermée ; DATA/RUNTIME ne déclenchent pas repair AI ; MODEL repair borné/progress-aware ; aucun `continue/reprend` pour friction interne récupérable ; publication runtime-only.
+Fermé : `runtime._should_repair`/`_issue_fingerprint` (garde de progression : un repair qui reproduit exactement le
+même jeu d'issues arrête le run immédiatement au lieu d'épuiser inutilement `max_repairs`) + vérification finale
+`compiler.proof_plan_is_fresh` avant tout retour `PROVED` (porte de publication unique, défense en profondeur).
+Les invariants DATA/RUNTIME → zéro appel IA et `Runtime.build_deck` en un seul appel étaient déjà structurellement
+corrects (le `CardFactsResolver` de G2 épuise ses routes en interne ; seules les issues `owner=MODEL` déclenchent
+une réparation) — désormais prouvés matériellement plutôt que supposés.
+Preuve : `tests/test_g8_continuous_run_controller.py` 9/9 EXECUTED_PASS, incluant :
+- réparation structurelle automatique en un seul appel `build_deck` (2 appels modèle : build + repair, zéro handoff);
+- modèle en boucle infinie sur le même défaut → arrêt matériellement anticipé (`calls < 6` pour un budget de 5)
+  avec `MODEL_REPAIR_NO_PROGRESS`;
+- panne provider + route de secours → le modèle n'est appelé qu'une seule fois (zéro appel de réparation DATA);
+- épuisement total des routes → terminal immédiat, zéro appel de réparation;
+- intégration de la porte de publication (proof_plan_is_fresh mocké à False → jamais PROVED).
 
 ## Acceptance globale des REQ
 

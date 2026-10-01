@@ -194,8 +194,31 @@ summon's binding straight from `CardFacts.effect_text` (bypassing the
 already-compiled `action.summon_binding`) and flags any signature
 divergence.
 
+## G8 — Deterministic continuous-run controller (CLOSED) — all 4 mandatory defects now fixed
+
+`current_gate=G8`. REQ-CR-027 CLOSED. REQ-CR-003 fully CLOSED (mechanical
+consequences G1 + flow control G8). All 4 mandatory defects from
+`00_START_HERE.md` are now closed:
+1. Quasar valid-line-blocked-by-wording — CLOSED G5.
+2. Single-provider blocking — CLOSED G2.
+3. Model-authored mechanical consequences — CLOSED G1.
+4. Unnecessary handoff / model orchestration — CLOSED G8.
+
+`runtime._should_repair`/`_issue_fingerprint` add a genuine progress guard
+(a repair that reproduces the identical blocking issue set stops the run
+immediately instead of exhausting `max_repairs` uselessly). A final
+`compiler.proof_plan_is_fresh` check guards the single publication gate
+defensively before any `PROVED` result is returned. The DATA-fallback and
+single-call-auto-repair invariants were already structurally correct
+(G2's `CardFactsResolver` already exhausts routes internally; only
+`owner=MODEL` issues ever trigger `self.model(...)`) and are now proven
+materially rather than assumed.
+
 ## NEXT_STEP
 
-Proceed to G8 (`runtime.py`, T8): deterministic continuous-run controller.
-This closes the chantier's 4th and final mandatory defect
-(D5/REQ-CR-027 -- unnecessary handoff / model orchestration).
+Proceed to G9: differential closure. Fill the remaining honest gaps in the
+12-capability map (unified ProofPlan object graph, first-class
+ActionLegalityProof artifact, cold audit beyond summon bindings) only if a
+failing proof demands it; otherwise run full cumulative regression, verify
+the Authorized Diff Surface end to end, package `worktree/source` as flat
+Sources, extract clean, and replay the full suite on the packaged bytes.

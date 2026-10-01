@@ -1,18 +1,54 @@
 from __future__ import annotations
 
-from dataclasses import asdict
+from dataclasses import asdict, replace as _dataclass_replace
 from pathlib import Path
 from typing import Any, Callable, Mapping
+
+import hashlib
+import json
 
 from card_data import (
     CardDataError, CardDataService, YGOPRODeckProvider, load_narrative_mechanics_policy,
 )
-from compiler import compile_draft, compile_presentation_plan
+from compiler import compile_draft, compile_presentation_plan, proof_plan_is_fresh
 from contracts import (
     BuildContext, BuildRequest, DeckResult, IssueOwner, ProofStatus,
     SemanticDeckDraft, ValidationIssue, ValidationReport, semantic_draft_from_mapping,
 )
 from validator import combine_validation, validate_combo_lines, validate_deck_legality
+
+
+def _issue_fingerprint(issues: list[ValidationIssue]) -> str:
+    """REQ-CR-027 progress guard: a stable signature of a blocking issue set.
+    Used to detect a MODEL repair attempt that reproduces the exact same
+    blocker again -- the budget-based `max_repairs` bound alone cannot tell
+    a stuck repair from genuine incremental progress."""
+    payload = sorted((i.code, i.card_name or "", i.line_id or "") for i in issues)
+    return hashlib.sha256(json.dumps(payload).encode("utf-8")).hexdigest()
+
+
+def _should_repair(
+    issues: list[ValidationIssue], seen_fingerprints: set[str], repair_count: int, max_repairs: int,
+) -> tuple[bool, bool]:
+    """Returns (should_repair, no_progress). Bounded by both the repair
+    budget (max_repairs) and genuine progress (a repeated identical issue
+    fingerprint stops the run immediately rather than burning the remaining
+    budget on a repair that is known not to help)."""
+    if repair_count >= max_repairs:
+        return False, False
+    fingerprint = _issue_fingerprint(issues)
+    if fingerprint in seen_fingerprints:
+        return False, True
+    seen_fingerprints.add(fingerprint)
+    return True, False
+
+
+_NO_PROGRESS_ISSUE = ValidationIssue(
+    "MODEL_REPAIR_NO_PROGRESS",
+    "a MODEL repair attempt reproduced the identical blocking issue set; stopping instead of "
+    "exhausting the repair budget on a repair known not to help",
+    IssueOwner.MODEL,
+)
 
 ModelCallable = Callable[[Mapping[str, Any]], Mapping[str, Any] | SemanticDeckDraft]
 
@@ -371,6 +407,7 @@ class Runtime:
 
         draft: SemanticDeckDraft | None = None
         repair_count = 0
+        seen_fingerprints: set[str] = set()
         next_request = self._initial_model_request(context)
 
         while True:
@@ -382,22 +419,34 @@ class Runtime:
 
             structural = list(self._structural_issues(draft))
             if structural:
-                if repair_count < request.max_repairs:
+                should_repair, no_progress = _should_repair(structural, seen_fingerprints, repair_count, request.max_repairs)
+                if should_repair:
                     repair_count += 1
                     next_request = self._repair_request(context, draft, structural)
                     continue
-                return self._failure_result(ProofStatus.FAILED, structural)
+                extra = [_NO_PROGRESS_ISSUE] if no_progress else []
+                return self._failure_result(ProofStatus.FAILED, structural + extra)
 
             try:
                 compiled = compile_draft(draft, context, self.card_data)
             except CardDataError as exc:
+                # DATA/RUNTIME card-resolution failures are terminal here by
+                # design: CardDataService already tried every configured
+                # route internally (card_data.CardFactsResolver, REQ-CR-025)
+                # before raising, so there is no DATA-level retry left for
+                # the runtime to perform, and DATA/RUNTIME issues never
+                # trigger a MODEL repair call (REQ-CR-027).
                 owner = IssueOwner.MODEL if exc.code in {"CATALOG_CARD_NOT_FOUND", "CATALOG_CARD_AMBIGUOUS"} else IssueOwner.DATA
                 status = ProofStatus.FAILED if owner == IssueOwner.MODEL else ProofStatus.UNVERIFIED
                 issue = ValidationIssue(exc.code, str(exc), owner, status)
-                if owner == IssueOwner.MODEL and repair_count < request.max_repairs:
-                    repair_count += 1
-                    next_request = self._repair_request(context, draft, [issue])
-                    continue
+                if owner == IssueOwner.MODEL:
+                    should_repair, no_progress = _should_repair([issue], seen_fingerprints, repair_count, request.max_repairs)
+                    if should_repair:
+                        repair_count += 1
+                        next_request = self._repair_request(context, draft, [issue])
+                        continue
+                    if no_progress:
+                        return self._failure_result(status, [issue, _NO_PROGRESS_ISSUE])
                 return self._failure_result(status, [issue])
 
             legality = validate_deck_legality(compiled)
@@ -407,11 +456,13 @@ class Runtime:
                 status = ProofStatus.UNVERIFIED if any(i.proof_status == ProofStatus.UNVERIFIED for i in non_model_blockers) else ProofStatus.FAILED
                 return self._failure_result(status, non_model_blockers, compiled)
             if model_issues:
-                if repair_count < request.max_repairs:
+                should_repair, no_progress = _should_repair(model_issues, seen_fingerprints, repair_count, request.max_repairs)
+                if should_repair:
                     repair_count += 1
                     next_request = self._repair_request(context, draft, model_issues)
                     continue
-                return self._failure_result(ProofStatus.FAILED, model_issues, compiled)
+                extra = [_NO_PROGRESS_ISSUE] if no_progress else []
+                return self._failure_result(ProofStatus.FAILED, model_issues + extra, compiled)
 
             audit_map, audit_runtime_issue = self._semantic_audit_map(compiled)
             if audit_runtime_issue is not None:
@@ -425,11 +476,26 @@ class Runtime:
                 status = ProofStatus.UNVERIFIED if any(i.proof_status == ProofStatus.UNVERIFIED for i in non_model_blockers) else ProofStatus.FAILED
                 return self._failure_result(status, non_model_blockers, compiled)
             if model_issues or not combined.publication_allowed:
-                if model_issues and repair_count < request.max_repairs:
-                    repair_count += 1
-                    next_request = self._repair_request(context, draft, model_issues)
-                    continue
+                if model_issues:
+                    should_repair, no_progress = _should_repair(model_issues, seen_fingerprints, repair_count, request.max_repairs)
+                    if should_repair:
+                        repair_count += 1
+                        next_request = self._repair_request(context, draft, model_issues)
+                        continue
+                    if no_progress:
+                        combined = _dataclass_replace(combined, issues=combined.issues + (_NO_PROGRESS_ISSUE,))
                 return DeckResult(status=combined.status, final_text="Validation échouée; aucun deck final publié.\n", deck=compiled, report=combined)
+
+            # Single publication gate (REQ-CR-027 invariant #16): never
+            # return PROVED on a proof that is not bound to the exact
+            # current semantic/evidence/compiler-schema revisions.
+            if not proof_plan_is_fresh(compiled, draft, context):
+                stale_issue = ValidationIssue(
+                    "PUBLICATION_PROOF_STALE",
+                    "compiled ProofPlan no longer matches the current semantic/evidence revisions",
+                    IssueOwner.RUNTIME, ProofStatus.FAILED,
+                )
+                return self._failure_result(ProofStatus.FAILED, [stale_issue], compiled)
 
             return DeckResult(
                 status=ProofStatus.PROVED,
