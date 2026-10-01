@@ -9,9 +9,9 @@ import urllib.request
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Mapping, Protocol
+from typing import Any, Callable, Mapping, Protocol, Sequence
 
-from contracts import CardFacts
+from contracts import CardFacts, ResolutionAttempt
 
 
 YGOPRODECK_CARDINFO_URL = "https://db.ygoprodeck.com/api/v7/cardinfo.php"
@@ -206,19 +206,105 @@ class CardFactsCache:
         temp.replace(path)
 
 
+def _attempt(route: str, outcome: str, error_class: str | None, *, locator: str | None = None) -> ResolutionAttempt:
+    return ResolutionAttempt(
+        route=route, outcome=outcome, error_class=error_class,
+        timestamp=datetime.now(timezone.utc).isoformat(), locator=locator,
+    )
+
+
+def _route_name(route: CardFactsProvider) -> str:
+    return getattr(route, "route_name", route.__class__.__name__)
+
+
+class CardFactsResolver:
+    """Multi-route CardFacts resolution (REQ-CR-025). Route failure != info
+    failure: one admissible route's outage never stops resolution while
+    another admissible route remains unexhausted. Cache is checked first;
+    routes are then tried in the given order; CARD_FACTS_UNRESOLVED is only
+    raised once every configured route has failed (route exhaustion), never
+    on a single route's failure."""
+
+    def __init__(self, routes: Sequence[CardFactsProvider], *, cache: "CardFactsCache"):
+        self.routes = list(routes)
+        self.cache = cache
+
+    def resolve(self, canonical_name: str, *, verify: bool = False) -> tuple[CardFacts, tuple[ResolutionAttempt, ...]]:
+        attempts: list[ResolutionAttempt] = []
+        cached = self.cache.get(canonical_name)
+        if cached is not None and not verify:
+            attempts.append(_attempt("CACHE", "SUCCESS", None, locator=cached.source_locator))
+            return cached, tuple(attempts)
+
+        resolved: list[CardFacts] = []
+        if cached is not None:
+            attempts.append(_attempt("CACHE", "SUCCESS", None, locator=cached.source_locator))
+            resolved.append(cached)
+
+        for route in self.routes:
+            route_name = _route_name(route)
+            try:
+                facts = route.fetch_exact(canonical_name)
+            except CardDataError as exc:
+                attempts.append(_attempt(route_name, "FAILURE", exc.code))
+                continue
+            if normalize_name(facts.canonical_name) != normalize_name(canonical_name):
+                attempts.append(_attempt(route_name, "FAILURE", "CARD_PROVIDER_NAME_MISMATCH"))
+                continue
+            attempts.append(_attempt(route_name, "SUCCESS", None, locator=facts.source_locator))
+            resolved.append(facts)
+            if not verify or len(resolved) >= 2:
+                break
+
+        if not resolved:
+            error = CardDataError(
+                "CARD_FACTS_UNRESOLVED",
+                f"all admissible routes exhausted for {canonical_name} "
+                f"({len(attempts)} attempt(s): {[a.route for a in attempts]})",
+            )
+            error.attempts = tuple(attempts)  # type: ignore[attr-defined]
+            raise error
+
+        if len(resolved) > 1:
+            conflict_fields = ("card_type", "level", "rank", "linkval", "scale")
+            first = resolved[0]
+            for other in resolved[1:]:
+                if any(getattr(first, f) != getattr(other, f) for f in conflict_fields):
+                    error = CardDataError(
+                        "CARD_FACTS_CONFLICT",
+                        f"material conflict between independent routes for {canonical_name}",
+                    )
+                    error.attempts = tuple(attempts)  # type: ignore[attr-defined]
+                    error.candidates = tuple(resolved)  # type: ignore[attr-defined]
+                    raise error
+
+        facts = resolved[0]
+        if cached is None or facts is not cached:
+            self.cache.put(facts)
+        return facts, tuple(attempts)
+
+
 class CardDataService:
     def __init__(
         self,
         *,
         source_dir: str | Path,
-        provider: CardFactsProvider | None,
+        provider: CardFactsProvider | None = None,
+        routes: Sequence[CardFactsProvider] | None = None,
         cache_dir: str | Path,
     ):
         self.source_dir = Path(source_dir)
         self.catalog = LocalCardCatalog.from_source(source_dir)
         self.banlist = Banlist.from_source(source_dir)
-        self.provider = provider
         self.cache = CardFactsCache(cache_dir)
+        if routes is not None:
+            configured_routes = list(routes)
+        elif provider is not None:
+            configured_routes = [provider]
+        else:
+            configured_routes = []
+        self.resolver = CardFactsResolver(configured_routes, cache=self.cache)
+        self.last_resolution_attempts: tuple[ResolutionAttempt, ...] = ()
 
     def canonical_name(self, name: str) -> str:
         return self.catalog.resolve(name)
@@ -228,15 +314,8 @@ class CardDataService:
 
     def get_facts(self, name: str) -> CardFacts:
         canonical = self.canonical_name(name)
-        cached = self.cache.get(canonical)
-        if cached is not None:
-            return cached
-        if self.provider is None:
-            raise CardDataError("CARD_FACTS_UNAVAILABLE", f"no provider/cache facts available for {canonical}")
-        facts = self.provider.fetch_exact(canonical)
-        if normalize_name(facts.canonical_name) != normalize_name(canonical):
-            raise CardDataError("CARD_PROVIDER_NAME_MISMATCH", f"provider facts do not bind to {canonical}")
-        self.cache.put(facts)
+        facts, attempts = self.resolver.resolve(canonical)
+        self.last_resolution_attempts = attempts
         return facts
 
 

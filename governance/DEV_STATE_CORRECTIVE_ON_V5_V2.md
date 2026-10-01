@@ -97,8 +97,22 @@ validator.py change required yet — additive, backward compatible).
 Proofs made stale (per PRE-GO §7): `tests/test_g0_characterization.py::RedModelMcbSecretariat`
 (intentionally, documented in its own header).
 
+## G2 — CardFactsResolver multi-route (CLOSED)
+
+`current_gate=G2`. `worktree_changed=["card_data.py","compiler.py","contracts.py","runtime.py"]`.
+REQ-CR-025 CLOSED, REQ-CR-004 CLOSED. `CardFactsResolver` tries ordered
+injectable routes, cache-first, provenance via `ResolutionAttempt`,
+`CARD_FACTS_UNRESOLVED` only after exhaustion, `CARD_FACTS_CONFLICT` in
+`verify=True` mode. `CardDataService(routes=[...])` and
+`Runtime(card_routes=[...])` are the new multi-route entry points;
+single-route `provider=`/`card_provider=` stay backward compatible.
+
+Proofs made stale: `tests/test_g0_characterization.py::RedProviderFallback`
+(documented in its header; error code intentionally changed from
+`CARD_PROVIDER_UNAVAILABLE` to `CARD_FACTS_UNRESOLVED` once routes are
+exhausted rather than propagating the first route's raw error).
+
 ## NEXT_STEP
 
-Proceed to G2 (`card_data.py` CardFactsResolver multi-route) per
-`governance/PRE_GO_CORRECTIVE_ON_V5_V2.md` §3 T2. Do not patch
-`validator.py` combo logic (T4..T7) before T2/T3 land, per gate order.
+Proceed to G3 (`compiler.py` ProofPlan/lineage, T3). Still do not patch
+`validator.py` combo logic (T4..T7) before T3 lands, per gate order.

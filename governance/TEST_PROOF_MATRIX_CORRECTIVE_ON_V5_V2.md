@@ -159,5 +159,16 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | full build_deck pipeline smoke (model→compile→legality→combo) | G1 | ad hoc script via `Runtime.build_deck` with fake model/provider, 3 scenarios (structural repair path, resource-conservation FAILED path) | EXECUTED_PASS — no crash, correct FAILED/UNVERIFIED reasons, confirms compiler/runtime wiring after schema change |
 | Authorized Diff Surface check | G1 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=["compiler.py","contracts.py","runtime.py"]` ⊆ T1 authorized surface, no NO-TOUCH violation |
 
-G2..G9 entries remain `PLANNED` until their gate executes; this table is
+### G2 — EXECUTED (T2: card_data.py MUST, contracts.py/runtime.py MAY)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| RED-PROVIDER-FALLBACK (closure) | G2 | `python3 tests/test_g2_card_facts_resolver.py -v` (`GreenProviderFallback`) | EXECUTED_PASS — route B resolves after route A outage |
+| RED-PROVIDER-EXHAUSTION (closure) | G2 | same run (`GreenRouteExhaustion`, 2 tests) | EXECUTED_PASS — `CARD_FACTS_UNRESOLVED` only after exhaustion, attempts preserved |
+| RED-DATA-CONFLICT (closure) | G2 | same run (`GreenConflictDetection`, 2 tests) | EXECUTED_PASS — conflicting routes fail closed as `CARD_FACTS_CONFLICT`; agreeing routes pass |
+| cache short-circuit unit | G2 | same run (`GreenCacheShortCircuit`) | EXECUTED_PASS |
+| G1 regression re-check | G2 | `python3 tests/test_g1_contracts_ownership.py -v` | EXECUTED_PASS — 12/12, unaffected |
+| Authorized Diff Surface check | G2 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=["card_data.py","compiler.py","contracts.py","runtime.py"]` ⊆ global MUST/MAY surface, no NO-TOUCH violation |
+
+G3..G9 entries remain `PLANNED` until their gate executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).

@@ -18,7 +18,7 @@ Les IDs sont cumulatifs ; aucune renumérotation.
 | 001 | Reliable deck product | REGRESSED | restaurer preuve combo + data resolver |
 | 002 | Automatic information transport | VERIFIED_PARENT | préserver + étendre data lineage |
 | 003 | No AI secretariat | PARTIAL/REGRESSED | retirer consequences/flow control model-owned |
-| 004 | Automatic web card facts | REGRESSED | resolver multi-route |
+| 004 | Automatic web card facts | CLOSED G2 (was REGRESSED) | multi-route resolver landed, see REQ-CR-025 |
 | 005 | Environment authority separation | VERIFIED_PARENT | preserve |
 | 006 | Canonical compile | PARTIAL | étendre aux proof bindings/MCB |
 | 007 | Issue ownership/routing | VERIFIED_PARENT | preserve + controller policy |
@@ -67,8 +67,14 @@ Claims numériques/booléens/ensembles dérivables sont calculés depuis replay 
 ### REQ-CR-024 — Independent Cold Audit — OPEN
 Une passe froide ne fait pas confiance aux statuts/bindings primaires et cherche divergence sémantique/mécanique sur les lignes matérielles.
 
-### REQ-CR-025 — Multi-route CardFactsResolver — OPEN
+### REQ-CR-025 — Multi-route CardFactsResolver — CLOSED (G2, 2026-10-01)
 Route failure != information failure. Cache/provider(s)/official/direct/web adapter/fallback ; UNRESOLVED seulement après épuisement ou conflit matériel non résolu.
+Fermé : `card_data.CardFactsResolver` (routes injectables ordonnées, cache-first, `ResolutionAttempt` provenance,
+`CARD_FACTS_UNRESOLVED` seulement après épuisement, `CARD_FACTS_CONFLICT` en mode `verify=True` si désaccord matériel entre deux routes).
+`CardDataService` accepte désormais `routes=[...]` (le `provider=` single-route reste rétro-compatible).
+`Runtime.__init__` accepte `card_routes=[...]`.
+Preuve : `tests/test_g2_card_facts_resolver.py` 6/6 EXECUTED_PASS.
+`tests/test_g0_characterization.py::RedProviderFallback` stale intentionnellement (voir son en-tête).
 
 ### REQ-CR-026 — Complete V4→candidate combo differential baseline — OPEN
 Les 12 capacités V4 suivantes doivent chacune avoir fixture + guard + résultat différentiel : PCL, ledger, snapshots, action legality, MCB, summon binding, dynamic properties, restrictions, claims, backward, critical decisions, cold audit.

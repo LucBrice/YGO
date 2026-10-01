@@ -35,13 +35,19 @@ class Runtime:
         model: ModelCallable,
         source_dir: str | Path,
         card_provider: Any = None,
+        card_routes: Any = None,
         cache_dir: str | Path | None = None,
     ):
         self.model = model
         self.source_dir = Path(source_dir)
-        provider = card_provider if card_provider is not None else YGOPRODeckProvider()
+        if card_routes is not None:
+            routes = list(card_routes)
+        elif card_provider is not None:
+            routes = [card_provider]
+        else:
+            routes = [YGOPRODeckProvider()]
         cache = Path(cache_dir) if cache_dir is not None else Path.home() / ".cache" / "ygo-clean-runtime" / "card_facts"
-        self.card_data = CardDataService(source_dir=self.source_dir, provider=provider, cache_dir=cache)
+        self.card_data = CardDataService(source_dir=self.source_dir, routes=routes, cache_dir=cache)
 
     @staticmethod
     def parse_model_draft(raw: Mapping[str, Any] | SemanticDeckDraft) -> SemanticDeckDraft:
