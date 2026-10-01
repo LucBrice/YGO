@@ -91,8 +91,16 @@ Fermé : `contracts.SemanticEffectInterpretation` (model-facing, kind fermé, z�
 Preuve : `tests/test_g1_contracts_ownership.py` 12/12 EXECUTED_PASS (RED old-schema rejected, GREEN new schema + determinism + template coverage).
 Regression guard devient actif ; `tests/test_g0_characterization.py::RedModelMcbSecretariat` stale intentionnellement (voir son en-tête).
 
-### REQ-CR-021 — Dynamic material properties + persistent restrictions — OPEN
+### REQ-CR-021 — Dynamic material properties + persistent restrictions — CLOSED (G6, 2026-10-01)
 Effective level/name/type/Tuner et restrictions actives sont évalués dans l'état exact et persistent/release selon bindings.
+Défaut réel découvert et corrigé à G6 : `_effective_level`/`_effective_tuner` lisaient un override `state.properties[(name, prop)]`
+sans jamais le purger ni le scoper à la présence sur FIELD — un override posé sur une copie d'une carte restait lisible
+indéfiniment, y compris après qu'une **copie différente du même nom** arrive plus tard sur le terrain (leak par nom).
+Fermé par : gate "tant que sur FIELD" dans `_effective_level`/`_effective_tuner`/`_effective_name` (nouveau) +
+`_purge_properties_if_left_field` appelé depuis `_move` (purge réelle dès que la dernière copie quitte FIELD).
+Cycle de vie des restrictions (apply/bloque/release/débloque, pas de fuite inter-lignes) matérialisé comme nouveau
+regression guard (déjà correct structurellement, jamais testé auparavant).
+Preuve : `tests/test_g6_dynamic_properties_restrictions.py` 6/6 EXECUTED_PASS.
 
 ### REQ-CR-022 — Backward Proof + Critical Decisions — OPEN
 Les exigences futures sont remontées vers les choix amont ; seules les décisions qui changent la viabilité future sont Critical Decisions.

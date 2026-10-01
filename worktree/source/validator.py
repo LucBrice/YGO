@@ -175,11 +175,23 @@ def _resolve_selected_name(name: str, facts: Mapping[str, Any]) -> str | None:
     return matches[0] if len(matches) == 1 else None
 
 
+def _purge_properties_if_left_field(state: _LineState, name: str, src: str) -> None:
+    """REQ-CR-021: a dynamic property override is scoped to the exact
+    instance/placement that earned it. Once the last copy of `name` leaves
+    FIELD, any stored override for it is dropped so a later, unrelated
+    arrival of a same-named card starts from its base facts instead of
+    inheriting a stale value."""
+    if src == "FIELD" and state.zones["FIELD"][name] <= 0:
+        for key in [k for k in state.properties if k[0] == name]:
+            del state.properties[key]
+
+
 def _move(state: _LineState, name: str, src: str, dst: str, qty: int) -> bool:
     if qty < 1 or state.zones[src][name] < qty:
         return False
     state.zones[src][name] -= qty
     state.zones[dst][name] += qty
+    _purge_properties_if_left_field(state, name, src)
     return True
 
 
@@ -338,17 +350,30 @@ def _apply_consequence(state, consequence, facts, line_id):
 
 
 def _effective_level(state, name, facts):
-    override = state.properties.get((name, "level"))
-    if isinstance(override, int):
-        return override
+    if _has(state, name, "FIELD", 1):
+        override = state.properties.get((name, "level"))
+        if isinstance(override, int):
+            return override
     return facts[name].level
 
 
 def _effective_tuner(state, name, facts):
-    override = state.properties.get((name, "tuner"))
-    if isinstance(override, bool):
-        return override
+    if _has(state, name, "FIELD", 1):
+        override = state.properties.get((name, "tuner"))
+        if isinstance(override, bool):
+            return override
     return "tuner" in facts[name].card_type.casefold()
+
+
+def _effective_name(state, name, facts):
+    """REQ-CR-021 completeness: effective_name overrides follow the same
+    while-on-field lifecycle as level/tuner, even though no predicate
+    currently consumes it (reserved for a future PRE-GO amendment)."""
+    if _has(state, name, "FIELD", 1):
+        override = state.properties.get((name, "effective_name"))
+        if isinstance(override, str) and override:
+            return override
+    return name
 
 
 # ---- Generic summon/material legality (REQ-CR-018/019) --------------------

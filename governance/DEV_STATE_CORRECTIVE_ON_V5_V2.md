@@ -158,8 +158,22 @@ Proofs made stale: `tests/test_g0_characterization.py::RedQuasarUnsupported`
 and `::GreenSynchroParentControl` (documented in the G0 file's header; both
 called the now-removed `validator._synchro_summon`).
 
+## G6 — Dynamic properties + persistent restrictions (CLOSED)
+
+`current_gate=G6`. REQ-CR-021 CLOSED. A real latent defect was found and
+fixed: `_effective_level`/`_effective_tuner` read a property override keyed
+only by card name, with no scoping to the exact instance/placement that
+earned it and no purge on departure -- a later, unrelated copy of the same
+card name arriving on FIELD would silently inherit a stale override from an
+earlier copy. Fixed via a while-on-FIELD gate plus `_purge_properties_if_left_field`
+invoked from `_move` on every departure. `_effective_name` added for
+REQ-CR-021 completeness (same lifecycle; no consumer yet, documented as
+reserved). Restriction apply/block/release/unblock lifecycle and no
+cross-line leakage materialized as new regression guards (already correct
+structurally; never previously tested in this workspace).
+
 ## NEXT_STEP
 
-Proceed to G6 (`validator.py`+`compiler.py`, T6): dynamic material
-properties (effective level/tuner/name) and persistent restriction
-lifecycle, hardened as explicit state-bound evaluation.
+Proceed to G7 (`validator.py`+`compiler.py`, T7): Derived Claims, Backward
+Proof/Critical Decisions, Cold Audit -- the remaining 3 of the 12 V4 combo
+capabilities.

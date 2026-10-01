@@ -205,5 +205,15 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | G1-G4 regression re-check | G5 | `test_g1_*` .. `test_g4_*` | EXECUTED_PASS, 28/28 |
 | Authorized Diff Surface check | G5 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed` unchanged set {card_data.py,compiler.py,contracts.py,runtime.py,validator.py} ⊆ T5 MUST/MAY, no NO-TOUCH violation |
 
-G6..G9 entries remain `PLANNED` until their gate executes; this table is
+### G6 — EXECUTED (T6: validator.py+compiler.py MUST, contracts.py MAY)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| RED-DYNAMIC-PROPERTY (real defect found + closed) | G6 | `python3 tests/test_g6_dynamic_properties_restrictions.py -v` (`RedDynamicPropertyLeak`, 3 tests) | EXECUTED_PASS — level/tuner override no longer leaks onto a later same-named arrival |
+| effective_name completeness unit | G6 | same run (`GreenEffectiveNameHelper`) | EXECUTED_PASS |
+| RED-RESTRICTION-PERSISTENCE (newly materialized regression guard) | G6 | same run (`GreenRestrictionLifecycle`, 2 tests) | EXECUTED_PASS — apply/block/release/unblock round-trip; no cross-line leak |
+| G1-G5 regression re-check | G6 | `test_g1_*` .. `test_g5_*` | EXECUTED_PASS, 38/38 |
+| Authorized Diff Surface check | G6 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — same file set as G5, no NO-TOUCH violation |
+
+G7..G9 entries remain `PLANNED` until their gate executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).
