@@ -112,7 +112,18 @@ Proofs made stale: `tests/test_g0_characterization.py::RedProviderFallback`
 `CARD_PROVIDER_UNAVAILABLE` to `CARD_FACTS_UNRESOLVED` once routes are
 exhausted rather than propagating the first route's raw error).
 
+## G3 — Proof compiler / ProofPlan / lineage (CLOSED)
+
+`current_gate=G3`. REQ-CR-016 PARTIAL/CLOSED-for-identity (see registry).
+`compiler.build_proof_plan` content-addresses `ProofPlan` by
+semantic_hash+evidence_set_hash+context_hash+compiler_schema_version;
+`compiler.proof_plan_is_fresh` detects staleness from either a semantic OR
+an evidence (CardFacts) change — closing a real gap in the pre-existing
+`is_fresh()` helper, which only ever checked the semantic hash. `compile_draft`
+now attaches `proof_plan` to every `CanonicalDeck` it returns.
+
 ## NEXT_STEP
 
-Proceed to G3 (`compiler.py` ProofPlan/lineage, T3). Still do not patch
-`validator.py` combo logic (T4..T7) before T3 lands, per gate order.
+Proceed to G4 (`validator.py` BEFORE/AFTER snapshots + double-spend/
+use-before-produce guards, T4). This is the first gate that touches
+`validator.py`; still no named-card branches.

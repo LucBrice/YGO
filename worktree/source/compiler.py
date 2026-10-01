@@ -3,17 +3,22 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import asdict
-from typing import Any
+from typing import Any, Sequence
 
 from card_data import CardDataService, normalize_name
 from contracts import (
     BuildContext, CanonicalAction, CanonicalCardEntry, CanonicalDeck, CardChoice,
-    CompiledLine, DeckSection, MechanicalConsequenceBinding, SemanticDeckDraft,
+    CompiledLine, DeckSection, MechanicalConsequenceBinding, ProofPlan, SemanticDeckDraft,
     SemanticEffectInterpretation,
 )
 
 
 EXTRA_TYPE_MARKERS = ("fusion", "synchro", "xyz", "link")
+
+# Bumped whenever the compiler's derivation rules change in a way that could
+# change compiled proof identities for the same semantic+evidence input
+# (REQ-CR-016 content-addressing).
+COMPILER_SCHEMA_VERSION = "corrective-v5.1-g3"
 
 
 def _stable_json(value: Any) -> str:
@@ -153,6 +158,70 @@ def semantic_source_hash(draft: SemanticDeckDraft, context: BuildContext) -> str
     return hashlib.sha256(_stable_json(semantic_source_payload(draft, context)).encode("utf-8")).hexdigest()
 
 
+def context_hash(context: BuildContext) -> str:
+    """Isolated hash of the authority/context slice of the semantic source
+    payload (REQ-CR-016 ProofPlan identity component)."""
+    payload = {
+        "environment_id": context.environment_id,
+        "era": context.request.era,
+        "direction_requested": context.request.direction,
+        "forbidden_mode": context.request.forbidden_mode,
+        "allowed_mechanics": list(context.allowed_mechanics),
+        "forbidden_mechanics": list(context.forbidden_mechanics),
+        "policy_source_sha256": context.policy_source_sha256,
+    }
+    return hashlib.sha256(_stable_json(payload).encode("utf-8")).hexdigest()
+
+
+def evidence_set_hash(entries: Sequence[CanonicalCardEntry]) -> tuple[str, tuple[tuple[str, str], ...]]:
+    """Content-addressed hash of every CardFacts payload actually consumed by
+    a compiled deck. Any card-fact change (errata, provider update, cache
+    refresh) changes this hash even when the semantic source did not change,
+    so a stale ProofPlan can never be mistaken for a fresh one."""
+    refs = tuple(sorted(
+        {(e.facts.canonical_name, e.facts.payload_sha256) for e in entries}
+    ))
+    return hashlib.sha256(_stable_json(list(refs)).encode("utf-8")).hexdigest(), refs
+
+
+def build_proof_plan(
+    *, semantic_hash: str, context: BuildContext, entries: Sequence[CanonicalCardEntry],
+) -> ProofPlan:
+    ev_hash, ev_refs = evidence_set_hash(entries)
+    ctx_hash = context_hash(context)
+    plan_hash = hashlib.sha256(
+        "\x1f".join((semantic_hash, ev_hash, ctx_hash, COMPILER_SCHEMA_VERSION)).encode("utf-8")
+    ).hexdigest()
+    return ProofPlan(
+        proof_plan_hash=plan_hash,
+        semantic_hash=semantic_hash,
+        evidence_set_hash=ev_hash,
+        context_hash=ctx_hash,
+        compiler_schema_version=COMPILER_SCHEMA_VERSION,
+        evidence_refs=ev_refs,
+    )
+
+
+def proof_plan_is_fresh(
+    deck: CanonicalDeck, draft: SemanticDeckDraft, context: BuildContext,
+) -> bool:
+    """True only if the deck's ProofPlan identity still matches a fresh
+    recomputation of semantic_hash/evidence_set_hash/context_hash for the
+    *current* draft/context/entries (Data Architecture V1 Sec.4: any upstream
+    change makes downstream proof data STALE, never silently reused)."""
+    if deck.proof_plan is None:
+        return False
+    recomputed_semantic = semantic_source_hash(draft, context)
+    recomputed_ev_hash, _ = evidence_set_hash(deck.entries)
+    recomputed_ctx_hash = context_hash(context)
+    return (
+        deck.proof_plan.semantic_hash == recomputed_semantic
+        and deck.proof_plan.evidence_set_hash == recomputed_ev_hash
+        and deck.proof_plan.context_hash == recomputed_ctx_hash
+        and deck.proof_plan.compiler_schema_version == COMPILER_SCHEMA_VERSION
+    )
+
+
 def _technical_id(prefix: str, *parts: str) -> str:
     digest = hashlib.sha256("\x1f".join(parts).encode("utf-8")).hexdigest()[:16]
     return f"{prefix}-{digest}"
@@ -243,13 +312,14 @@ def compile_draft(draft: SemanticDeckDraft, context: BuildContext, service: Card
             asserted_damage_threshold=line.asserted_damage_threshold,
         ))
 
+    entries_tuple = tuple(entries)
     return CanonicalDeck(
         deck_id=deck_id,
         source_hash=source_hash,
         context=context,
         direction=draft.direction,
         concept=draft.concept,
-        entries=tuple(entries),
+        entries=entries_tuple,
         lines=tuple(lines),
         axes=draft.axes,
         narrative_summary=draft.narrative_summary,
@@ -262,6 +332,7 @@ def compile_draft(draft: SemanticDeckDraft, context: BuildContext, service: Card
         signature_cards=tuple(_canonical_line_name(name, service) for name in draft.signature_cards),
         terminal_quote=draft.terminal_quote,
         notes=draft.notes,
+        proof_plan=build_proof_plan(semantic_hash=source_hash, context=context, entries=entries_tuple),
     )
 
 

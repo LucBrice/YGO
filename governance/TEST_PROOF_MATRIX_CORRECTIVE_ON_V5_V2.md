@@ -170,5 +170,16 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | G1 regression re-check | G2 | `python3 tests/test_g1_contracts_ownership.py -v` | EXECUTED_PASS — 12/12, unaffected |
 | Authorized Diff Surface check | G2 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=["card_data.py","compiler.py","contracts.py","runtime.py"]` ⊆ global MUST/MAY surface, no NO-TOUCH violation |
 
-G3..G9 entries remain `PLANNED` until their gate executes; this table is
+### G3 — EXECUTED (T3: compiler.py MUST, contracts.py MAY)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| ProofPlan determinism (same semantic+evidence) | G3 | `python3 tests/test_g3_proof_plan.py -v` (`GreenProofPlanDeterminism`) | EXECUTED_PASS |
+| Evidence-change staleness (closes a real gap in the old `is_fresh()`) | G3 | same run (`RedEvidenceChangeMustInvalidate`, 3 tests) | EXECUTED_PASS |
+| evidence_set_hash order-independence unit | G3 | same run (`GreenEvidenceSetHashUnit`) | EXECUTED_PASS |
+| G1/G2 regression re-check | G3 | `test_g1_contracts_ownership.py` + `test_g2_card_facts_resolver.py` | EXECUTED_PASS, 18/18 |
+| full build_deck pipeline smoke (PROVED path with ProofPlan attached) | G3 | ad hoc script via `Runtime.build_deck` | EXECUTED_PASS — `status=PROVED`, `proof_plan.proof_plan_hash` populated |
+| Authorized Diff Surface check | G3 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=["card_data.py","compiler.py","contracts.py","runtime.py"]`, no NO-TOUCH violation |
+
+G4..G9 entries remain `PLANNED` until their gate executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).

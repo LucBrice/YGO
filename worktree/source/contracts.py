@@ -277,6 +277,23 @@ class CompiledLine:
 
 
 @dataclass(frozen=True)
+class ProofPlan:
+    """REQ-CR-016. Content-addressed by semantic_hash + evidence_set_hash +
+    context_hash + compiler_schema_version (compiler.PROOF_PLAN_HASH_PARTS
+    composes proof_plan_hash from exactly these four). Same semantic source
+    and same evidence always yield the same ProofPlan identity; any upstream
+    change (semantic edit, CardFacts update, context/authority change, or a
+    compiler schema bump) is visible as a hash change, never silently
+    absorbed."""
+    proof_plan_hash: str
+    semantic_hash: str
+    evidence_set_hash: str
+    context_hash: str
+    compiler_schema_version: str
+    evidence_refs: tuple[tuple[str, str], ...]  # sorted (canonical_name, payload_sha256)
+
+
+@dataclass(frozen=True)
 class CanonicalDeck:
     deck_id: str
     source_hash: str
@@ -296,6 +313,7 @@ class CanonicalDeck:
     signature_cards: tuple[str, ...] = ()
     terminal_quote: str | None = None
     notes: tuple[str, ...] = ()
+    proof_plan: ProofPlan | None = None
 
 
 @dataclass(frozen=True)

@@ -35,8 +35,14 @@ Les IDs sont cumulatifs ; aucune renumérotation.
 ### REQ-CR-015 — Semantic authority / deterministic proof boundary — OPEN
 L'IA comprend le Yu-Gi-Oh! non dérivable ; compiler/validator n'inventent pas de règles card-specific. Unsupported runtime != illégalité métier.
 
-### REQ-CR-016 — Proof-Carrying Line restoration — OPEN
+### REQ-CR-016 — Proof-Carrying Line restoration — PARTIAL (ProofPlan identity CLOSED at G3; replay/claims binding pending G4/G7)
 Toute ligne essentielle possède un ProofPlan content-addressed liant semantic line, evidence, resources, constraints, replay et claims.
+G3 : `contracts.ProofPlan` + `compiler.build_proof_plan`/`proof_plan_is_fresh` ferment la partie identité :
+`proof_plan_hash = H(semantic_hash, evidence_set_hash, context_hash, compiler_schema_version)`.
+Une mise à jour de CardFacts (même sémantique inchangée) change désormais `evidence_set_hash` et rend le ProofPlan STALE —
+ce que l'ancien `is_fresh()` (qui ne vérifiait que `source_hash`) ne détectait pas.
+Preuve : `tests/test_g3_proof_plan.py` 5/5 EXECUTED_PASS.
+Reste OPEN pour fermeture complète de 016 : liaison explicite resources/constraints/replay/claims (G4/G7).
 
 ### REQ-CR-017 — Exact ResourceLedger + BEFORE/AFTER — OPEN
 Replay séquentiel avec quantité/zone/copies exactes, no double-spend, use-after-produce et snapshots immuables à chaque action matérielle.
