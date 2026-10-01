@@ -148,5 +148,16 @@ coverage, exact package replay 52/52 PASS. These remain parent evidence only.
 | 12-capability map | G0 | `fixtures/V4_CAPABILITY_DIFFERENTIAL_MAP.md` materialized | EXECUTED_PASS (inventory only, rows PLANNED) |
 | workspace diff | G0 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=[]`, no product mutation |
 
-G1..G9 entries remain `PLANNED` until their gate executes; this table is
+### G1 — EXECUTED (T1: contracts.py MUST, compiler.py/runtime.py MAY)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| RED-MODEL-MCB-SECRETARIAT (closure) | G1 | `python3 tests/test_g1_contracts_ownership.py -v` (`RedModelMcbSecretariatFixed`, 4 tests) | EXECUTED_PASS — raw operator/zone fields now rejected |
+| GREEN effect-interpretation schema | G1 | same run (`GreenEffectInterpretationAccepted`, 2 tests) | EXECUTED_PASS |
+| MCB projection unit+determinism | G1 | same run (`CompilerMcbProjectionDeterminism`, 4 tests) | EXECUTED_PASS — all 18 closed kinds templated, deterministic |
+| certainty monotonicity helper unit | G1 | same run (`CertaintyMonotonicityHelper`, 2 tests) | EXECUTED_PASS |
+| full build_deck pipeline smoke (model→compile→legality→combo) | G1 | ad hoc script via `Runtime.build_deck` with fake model/provider, 3 scenarios (structural repair path, resource-conservation FAILED path) | EXECUTED_PASS — no crash, correct FAILED/UNVERIFIED reasons, confirms compiler/runtime wiring after schema change |
+| Authorized Diff Surface check | G1 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=["compiler.py","contracts.py","runtime.py"]` ⊆ T1 authorized surface, no NO-TOUCH violation |
+
+G2..G9 entries remain `PLANNED` until their gate executes; this table is
 updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).

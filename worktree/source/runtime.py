@@ -105,27 +105,36 @@ class Runtime:
                     "certainty": "GUARANTEED|CONDITIONAL|RANGE|RANDOM|UNKNOWN",
                     "essential": "bool",
                     "visual_cards": ["semantically chosen cards for this line, optional"],
+                    "asserted_damage_threshold": "integer optional; the numeric claim this line asserts (e.g. OTK damage), recomputed independently as a DerivedClaim",
                     "actions": [{
                         "label": "human semantic step",
                         "kind": "NORMAL_SUMMON|SET_SCALE|SYNCHRO_SUMMON|XYZ_SUMMON|LINK_SUMMON|PENDULUM_SUMMON|ACTIVATE_EFFECT",
                         "card": "card name or null",
                         "materials": ["card names"],
-                        "consequences": [{
-                            "operator": "REQUIRE|MOVE|CONSUME|OBTAIN|PRODUCE|PROPERTY_UPDATE|RESTRICTION_APPLY|RESTRICTION_RELEASE|DAMAGE_EVENT|LETHAL_CHECK",
+                        "effects": [{
+                            "kind": (
+                                "REQUIRE_PRESENT_FIELD|REQUIRE_PRESENT_HAND|REQUIRE_PRESENT_GRAVEYARD|"
+                                "OBTAIN_NAMED_FROM_DECK|SPECIAL_SUMMON_FROM_GY|SPECIAL_SUMMON_FROM_HAND|"
+                                "SPECIAL_SUMMON_FROM_DECK|RETURN_TO_HAND_FROM_FIELD|SEND_TO_GRAVEYARD_FROM_FIELD|"
+                                "SEND_TO_GRAVEYARD_FROM_HAND|BANISH_FROM_FIELD|BANISH_FROM_GRAVEYARD|MILL_FROM_DECK|"
+                                "SET_EFFECTIVE_LEVEL|SET_EFFECTIVE_TUNER|SET_EFFECTIVE_NAME|RESTRICT_MECHANIC|"
+                                "RELEASE_MECHANIC_RESTRICTION|INFLICT_DAMAGE"
+                            ),
                             "subject": "card name when applicable",
-                            "source": "zone optional",
-                            "destination": "zone optional",
-                            "qty": "integer optional",
-                            "scope": "semantic scope optional",
-                            "property_name": "optional",
+                            "qty": "positive integer, default 1",
+                            "property_name": "optional, only for SET_EFFECTIVE_* when overriding the default property",
                             "value": "optional",
-                            "params": "semantic parameters only",
+                            "mechanics": "optional array, only for RESTRICT_MECHANIC/RELEASE_MECHANIC_RESTRICTION",
                         }],
                     }],
                 }],
                 "notes": ["optional semantic notes"],
             },
-            "hard_boundary": "Do not output IDs, hashes, counts, bindings, legality/proof status, freshness, routing or publication fields.",
+            "hard_boundary": (
+                "Do not output IDs, hashes, counts, bindings, legality/proof status, freshness, routing or "
+                "publication fields. Do not output a raw mechanical operator, source zone or destination zone: "
+                "pick one closed `effects[].kind` instead and the zone/operator is derived automatically."
+            ),
         }
 
     @staticmethod
@@ -152,23 +161,21 @@ class Runtime:
                 "certainty": line.certainty.value,
                 "essential": line.essential,
                 "visual_cards": list(line.visual_cards),
+                "asserted_damage_threshold": line.asserted_damage_threshold,
                 "actions": [{
                     "label": action.label,
                     "kind": action.kind,
                     "card": action.card,
                     "materials": list(action.materials),
                     "certainty": action.certainty.value,
-                    "consequences": [{
-                        "operator": c.operator,
-                        "subject": c.subject,
-                        "source": c.source,
-                        "destination": c.destination,
-                        "qty": c.qty,
-                        "scope": c.scope,
-                        "property_name": c.property_name,
-                        "value": c.value,
-                        "params": dict(c.params),
-                    } for c in action.consequences],
+                    "effects": [{
+                        "kind": e.kind,
+                        "subject": e.subject,
+                        "qty": e.qty,
+                        "property_name": e.property_name,
+                        "value": e.value,
+                        "mechanics": list(e.mechanics),
+                    } for e in action.effects],
                 } for action in line.actions],
             } for line in draft.lines],
         }

@@ -1,5 +1,17 @@
 """G0 — Characterization. NO product mutation performed by this file.
 
+FROZEN HISTORICAL RECORD as of the G0 checkpoint commit. Per
+`authority/METHODOLOGIE_DEV_YGO_V1.md` §7/§13 and
+`governance/PRE_GO_CORRECTIVE_ON_V5_V2.md` §7 ("proofs made stale by future
+mutation"), this file is NOT part of the ongoing regression suite once the
+corresponding defect is patched: a RED test that stops reproducing a fixed
+defect is expected to fail here, and that failure IS the proof the fix
+landed. `RedModelMcbSecretariat` goes stale at G1 (see
+`tests/test_g1_contracts_ownership.py` for its GREEN regression-guard
+successor). `RedQuasarUnsupported` goes stale at G5. `RedProviderFallback`
+goes stale at G2. Do not "fix" this file to make it pass again; that would
+be reintroducing the defect or mutating a historical proof, both forbidden.
+
 Materializes, against the exact unmutated V5 worktree (== baseline_v5):
 - RED-QUASAR-UNSUPPORTED  (REQ-CR-015/019, mandatory defect #1 from 00_START_HERE.md)
 - GREEN parent control for the Synchro path the current regex does support

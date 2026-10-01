@@ -74,10 +74,31 @@ V5 exact historical evidence remains real : 52/52 full regression PASS after leg
 
 `worktree/source` must remain byte-identical to exact V5 while gate is PRE_GO.
 
+## G1 — Contracts/ownership (CLOSED)
+
+`current_gate=G1`. `worktree_changed=["compiler.py","contracts.py","runtime.py"]`
+(⊆ T1 Authorized Diff Surface; `validator.py`/`card_data.py`/`api.py`
+untouched, matching T1 NO-TOUCH). REQ-CR-020 CLOSED. REQ-CR-003 PARTIAL
+(secretariat removed for mechanical consequences; flow-control part of 003
+still depends on REQ-CR-027 at G8).
+
+Schema changes: `SemanticAction.consequences` → `SemanticAction.effects`
+(model-facing, closed `EffectInterpretationKind`, zero operator/zone
+fields); `compiler.project_mechanical_consequences` deterministically
+projects effects into compiler-owned `MechanicalConsequenceBinding`
+(`CanonicalAction.consequences`, field name kept to respect validator.py
+NO-TOUCH). `FORBIDDEN_MODEL_FIELDS` extended with the Data Architecture V1
+§11 run-control set. RunState/StateSnapshot/ActionLegalityProof/
+SummonMaterialBinding/DerivedClaim/BackwardRequirement/CriticalDecision/
+ColdAuditResult/ResolutionAttempt dataclasses added to contracts.py as
+forward schema for G2..G8 (all currently unused-by-validator, so no
+validator.py change required yet — additive, backward compatible).
+
+Proofs made stale (per PRE-GO §7): `tests/test_g0_characterization.py::RedModelMcbSecretariat`
+(intentionally, documented in its own header).
+
 ## NEXT_STEP
 
-G0 closed materially. Proceed to G1 (`contracts.py` ownership/schema) per
-`governance/PRE_GO_CORRECTIVE_ON_V5_V2.md` §3 and
-`governance/CHANGE_SURFACE_CONTRACT_CORRECTIVE_ON_V5_V1.md` T1. Do not patch
-`validator.py`/`compiler.py` combo logic (T3..T7) before T1 ownership
-boundaries are closed, per the gate order.
+Proceed to G2 (`card_data.py` CardFactsResolver multi-route) per
+`governance/PRE_GO_CORRECTIVE_ON_V5_V2.md` §3 T2. Do not patch
+`validator.py` combo logic (T4..T7) before T2/T3 land, per gate order.

@@ -47,8 +47,13 @@ Chaque action matérielle est évaluée contre son BEFORE exact via facts/constr
 ### REQ-CR-019 — Generic summon/material binding — OPEN
 Les exigences de matériaux deviennent des bindings génériques. **Quasar valide** doit être prouvable ; **Quasar invalide** doit échouer ; aucun hardcode Quasar.
 
-### REQ-CR-020 — Compiler-owned Mechanical Consequence Binding — OPEN
+### REQ-CR-020 — Compiler-owned Mechanical Consequence Binding — CLOSED (G1, 2026-10-01)
 `REQUIRE/MOVE/CONSUME/PRODUCE/...` et équivalents dérivables sont compiler-owned et interdits dans le payload normal du modèle.
+Fermé : `contracts.SemanticEffectInterpretation` (model-facing, kind fermé, zéro operator/source/destination) +
+`compiler.project_mechanical_consequences` (déterministe, table de templates fermée `_MCB_TEMPLATES`) +
+`contracts.CanonicalAction.consequences` reste compiler-owned (`MechanicalConsequenceBinding`).
+Preuve : `tests/test_g1_contracts_ownership.py` 12/12 EXECUTED_PASS (RED old-schema rejected, GREEN new schema + determinism + template coverage).
+Regression guard devient actif ; `tests/test_g0_characterization.py::RedModelMcbSecretariat` stale intentionnellement (voir son en-tête).
 
 ### REQ-CR-021 — Dynamic material properties + persistent restrictions — OPEN
 Effective level/name/type/Tuner et restrictions actives sont évalués dans l'état exact et persistent/release selon bindings.

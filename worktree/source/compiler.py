@@ -8,7 +8,8 @@ from typing import Any
 from card_data import CardDataService, normalize_name
 from contracts import (
     BuildContext, CanonicalAction, CanonicalCardEntry, CanonicalDeck, CardChoice,
-    CompiledLine, DeckSection, SemanticDeckDraft,
+    CompiledLine, DeckSection, MechanicalConsequenceBinding, SemanticDeckDraft,
+    SemanticEffectInterpretation,
 )
 
 
@@ -19,18 +20,80 @@ def _stable_json(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def _consequence_payload(consequence) -> dict[str, Any]:
+def _effect_payload(effect: SemanticEffectInterpretation) -> dict[str, Any]:
     return {
-        "operator": consequence.operator,
-        "subject": consequence.subject,
-        "source": consequence.source,
-        "destination": consequence.destination,
-        "qty": consequence.qty,
-        "scope": consequence.scope,
-        "property_name": consequence.property_name,
-        "value": consequence.value,
-        "params": dict(consequence.params),
+        "kind": effect.kind,
+        "subject": effect.subject,
+        "qty": effect.qty,
+        "property_name": effect.property_name,
+        "value": effect.value,
+        "mechanics": list(effect.mechanics),
     }
+
+
+# ---- Compiler-owned MCB projection (REQ-CR-020) ----------------------------
+# Closed, deterministic template table: kind -> (operator, source, destination).
+# The model never chooses operator/source/destination; it only ever chooses
+# `kind` (see contracts.EffectInterpretationKind) plus semantic parameters
+# (subject/qty/property_name/value/mechanics). Same semantic+evidence input
+# always produces the same MCB (compiler determinism invariant).
+_MCB_TEMPLATES: dict[str, tuple[str, str | None, str | None]] = {
+    "REQUIRE_PRESENT_FIELD": ("REQUIRE", "FIELD", None),
+    "REQUIRE_PRESENT_HAND": ("REQUIRE", "HAND", None),
+    "REQUIRE_PRESENT_GRAVEYARD": ("REQUIRE", "GRAVEYARD", None),
+    "OBTAIN_NAMED_FROM_DECK": ("OBTAIN", "DECK", "HAND"),
+    "SPECIAL_SUMMON_FROM_GY": ("MOVE", "GRAVEYARD", "FIELD"),
+    "SPECIAL_SUMMON_FROM_HAND": ("MOVE", "HAND", "FIELD"),
+    "SPECIAL_SUMMON_FROM_DECK": ("PRODUCE", "DECK", "FIELD"),
+    "RETURN_TO_HAND_FROM_FIELD": ("MOVE", "FIELD", "HAND"),
+    "SEND_TO_GRAVEYARD_FROM_FIELD": ("CONSUME", "FIELD", "GRAVEYARD"),
+    "SEND_TO_GRAVEYARD_FROM_HAND": ("CONSUME", "HAND", "GRAVEYARD"),
+    "BANISH_FROM_FIELD": ("CONSUME", "FIELD", "BANISHED"),
+    "BANISH_FROM_GRAVEYARD": ("CONSUME", "GRAVEYARD", "BANISHED"),
+    "MILL_FROM_DECK": ("MOVE", "DECK", "GRAVEYARD"),
+    "SET_EFFECTIVE_LEVEL": ("PROPERTY_UPDATE", None, None),
+    "SET_EFFECTIVE_TUNER": ("PROPERTY_UPDATE", None, None),
+    "SET_EFFECTIVE_NAME": ("PROPERTY_UPDATE", None, None),
+    "RESTRICT_MECHANIC": ("RESTRICTION_APPLY", None, None),
+    "RELEASE_MECHANIC_RESTRICTION": ("RESTRICTION_RELEASE", None, None),
+    "INFLICT_DAMAGE": ("DAMAGE_EVENT", None, None),
+}
+
+_PROPERTY_NAME_BY_KIND = {
+    "SET_EFFECTIVE_LEVEL": "level",
+    "SET_EFFECTIVE_TUNER": "tuner",
+    "SET_EFFECTIVE_NAME": "effective_name",
+}
+
+
+def project_mechanical_consequences(
+    effects: tuple[SemanticEffectInterpretation, ...],
+) -> tuple[MechanicalConsequenceBinding, ...]:
+    """Deterministic projection of model-authored SemanticEffectInterpretation
+    into compiler-owned MechanicalConsequenceBinding. No field here is ever
+    copied verbatim from a model-controlled operator/zone choice: operator
+    and zones come only from `_MCB_TEMPLATES`, keyed by the closed `kind`
+    enum. Same (kind, subject, qty, property_name, value, mechanics) tuple
+    always yields the same binding (REQ-CR-020 determinism)."""
+    out: list[MechanicalConsequenceBinding] = []
+    for effect in effects:
+        operator, source, destination = _MCB_TEMPLATES[effect.kind]
+        property_name = effect.property_name or _PROPERTY_NAME_BY_KIND.get(effect.kind)
+        params: dict[str, Any] = {}
+        if effect.kind in {"RESTRICT_MECHANIC", "RELEASE_MECHANIC_RESTRICTION"}:
+            params["forbid_mechanics"] = list(effect.mechanics)
+        out.append(MechanicalConsequenceBinding(
+            operator=operator,
+            subject=effect.subject,
+            source=source,
+            destination=destination,
+            qty=effect.qty,
+            scope="SINGLE",
+            property_name=property_name,
+            value=effect.value,
+            params=params,
+        ))
+    return tuple(out)
 
 
 def semantic_source_payload(draft: SemanticDeckDraft, context: BuildContext) -> dict[str, Any]:
@@ -67,6 +130,7 @@ def semantic_source_payload(draft: SemanticDeckDraft, context: BuildContext) -> 
                     "certainty": line.certainty.value,
                     "essential": line.essential,
                     "visual_cards": list(line.visual_cards),
+                    "asserted_damage_threshold": line.asserted_damage_threshold,
                     "actions": [
                         {
                             "label": action.label,
@@ -74,7 +138,7 @@ def semantic_source_payload(draft: SemanticDeckDraft, context: BuildContext) -> 
                             "card": action.card,
                             "materials": list(action.materials),
                             "certainty": action.certainty.value,
-                            "consequences": [_consequence_payload(c) for c in action.consequences],
+                            "effects": [_effect_payload(e) for e in action.effects],
                         }
                         for action in line.actions
                     ],
@@ -164,7 +228,7 @@ def compile_draft(draft: SemanticDeckDraft, context: BuildContext, service: Card
                 kind=action.kind,
                 card_name=canonical_card,
                 materials=canonical_materials,
-                consequences=action.consequences,
+                consequences=project_mechanical_consequences(action.effects),
                 certainty=action.certainty,
             ))
         lines.append(CompiledLine(
@@ -176,6 +240,7 @@ def compile_draft(draft: SemanticDeckDraft, context: BuildContext, service: Card
             certainty=line.certainty,
             essential=line.essential,
             visual_cards=tuple(_canonical_line_name(name, service) for name in line.visual_cards),
+            asserted_damage_threshold=line.asserted_damage_threshold,
         ))
 
     return CanonicalDeck(
