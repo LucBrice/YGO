@@ -1,0 +1,10 @@
+{
+  "schema": "ygo-corrective-parent-identity-v1",
+  "parent_package": "YGO_V5_SOURCES.zip",
+  "parent_sha256": "87d4c297b82fb1aab1c5e3dc598dca400fb4e3e3325496d08325b12af818ac2a",
+  "functional_reference_package": "YGO_V4_RC16_23_8_TERMINAL_CLOSURE_SOURCES(1).zip",
+  "functional_reference_sha256": "90cb9f90c78e86725bb24a27c054f3603df20b670e961267bd62357b764dfb3e",
+  "stable_baseline": "V3.6 STABLE",
+  "target_version": "NOT_ASSIGNED",
+  "go_authorization": "NO"
+}

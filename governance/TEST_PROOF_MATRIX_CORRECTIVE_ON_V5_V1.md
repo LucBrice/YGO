@@ -1,0 +1,3 @@
+# SUPERSEDED
+
+Current authority: `TEST_PROOF_MATRIX_CORRECTIVE_ON_V5_V2.md`.

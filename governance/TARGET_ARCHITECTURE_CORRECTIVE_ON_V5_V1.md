@@ -1,0 +1,3 @@
+# SUPERSEDED
+
+Current authority: `TARGET_ARCHITECTURE_CORRECTIVE_ON_V5_V2.md`.

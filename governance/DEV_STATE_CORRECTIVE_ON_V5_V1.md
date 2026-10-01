@@ -1,0 +1,3 @@
+# SUPERSEDED
+
+Current authority: `DEV_STATE_CORRECTIVE_ON_V5_V2.md`.

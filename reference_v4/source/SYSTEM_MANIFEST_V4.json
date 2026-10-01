@@ -1,0 +1,197 @@
+{
+  "active_files": [
+    {
+      "bytes": 10510,
+      "file": "BANLIST_LINK_EVOLUTION_2020.md",
+      "sha256": "3589519b3362b3a438fba6fbe2f3c13ac14a29408c83816b2190673bcfe18fc3"
+    },
+    {
+      "bytes": 2570,
+      "file": "CONTEXTE_DECKS_YUGIOH_LINK_EVOLUTION_2020.md",
+      "sha256": "01d3b56dc7f74807928223886bd5ada09299f864d65f091e659b1f338b41187c"
+    },
+    {
+      "bytes": 7731,
+      "file": "FRESH_REPLAY_FINAL_GATE_V4.md",
+      "sha256": "d5f9486bb6b617fe996d93840217db7377e0515c33a70806776bb419eac2f845"
+    },
+    {
+      "bytes": 9312,
+      "file": "GAME_RULES_LINK_EVOLUTION_2020_V1.md",
+      "sha256": "6b87076525930c60473eb54ac2e73729f3678c039452952ff458a4834977db48"
+    },
+    {
+      "bytes": 76782,
+      "file": "HARNESS_EXECUTION_CHAT_V3.md",
+      "sha256": "2482ab179eba809f99d189d9e760bb1919aada55b22922bf8a02e1d0dc5ab465"
+    },
+    {
+      "bytes": 9779,
+      "file": "HOOK_ANCRAGE_REFACTOR_MULTI_SYSTEMES_V17.md",
+      "sha256": "dd4a0c18dde6babafd34f285d667eed425c93d8da975020fa027f7a2e109aac9"
+    },
+    {
+      "bytes": 3638,
+      "file": "HOOK_EXPLORATION_CONCEPTUELLE_DECKS_PERSONNAGES_V7.md",
+      "sha256": "96f2e3e8dc017d308ce566a53bf17dfc39c21de865a35ea4f8c034c2a960b51a"
+    },
+    {
+      "bytes": 12373,
+      "file": "HOOK_STYLE_AXES_CONSTRUCTION_DECKS_PERSONNAGES_V17.md",
+      "sha256": "0d63477d5d4959c77dc0d3e465a19606e70fd2b2c9dbbd8694f54589bfc604ca"
+    },
+    {
+      "bytes": 7848,
+      "file": "INSTRUCTION_GENERALE_RC16_23.md",
+      "sha256": "2b93cb98d742c175c2ea007ca8cc77e88cfcda0569bdedb4f5698aab11ca3bc2"
+    },
+    {
+      "bytes": 213268,
+      "file": "LINK_EVOLUTION_2020_CARD_POOL.json",
+      "sha256": "fc6fcbf51fef840a78affea500f0aecc7f1f97921e27c7ca5faaa143c1aaf68b"
+    },
+    {
+      "bytes": 23252,
+      "file": "REGISTRE_EXECUTION_ARTEFACTS_V7.md",
+      "sha256": "e84380a3b54995bd163552cbee15e24c07c556159cfbc23d849e8e102aed742d"
+    },
+    {
+      "bytes": 9250,
+      "file": "SEMANTIC_RULING_CONTRACT_V1.md",
+      "sha256": "371f4f31cf2aec5a74e756aef7169c5904da2d5828c5c720e73e503c25a42c3b"
+    },
+    {
+      "bytes": 40845,
+      "file": "STRUCTURE_AXES_COMBOS_DECKS_PERSONNAGES_V1.md",
+      "sha256": "babd4633f7e1488956c65a3e855702d2cc86af6db37216f6b3382890e078669f"
+    },
+    {
+      "bytes": 41468,
+      "file": "STRUCTURE_REPONSES_DECKS_PERSONNAGES_V50.md",
+      "sha256": "e08b47f7ddfad00dd2a01535f1ba6727b8355ce09b01af447cf0190b0cc8579f"
+    },
+    {
+      "bytes": 6299,
+      "file": "STYLE_DECKS_PERSONNAGE_LINK_EVOLUTION_V39.md",
+      "sha256": "a25bc0af63785922ae8ea09da0b755bcd3e7b5dd2dce912be114b86d9d75780e"
+    },
+    {
+      "bytes": 12079,
+      "file": "VALIDATION_CANONIQUE_REMIXE_V15.md",
+      "sha256": "5b7f1d6a48f90a4936e20114a24eb2c31c22011f162fccf06b03be5413f90028"
+    },
+    {
+      "bytes": 44468,
+      "file": "VALIDATION_FINALE_DECKS_PERSONNAGES_V41.md",
+      "sha256": "d7f909ab6780a6753d7c8387ea708d6d4b7bb150d23f4171bf9b080f821cc5f9"
+    },
+    {
+      "bytes": 27777,
+      "file": "VALIDATION_PILOTAGE_LIGNES_DECKS_PERSONNAGES_V1.md",
+      "sha256": "37bb0b59a168d516dbed5f8254ac354aada5e7885c822a67132c336e4e041331"
+    },
+    {
+      "bytes": 6386,
+      "file": "VALIDATION_PROGRESSION_NARRATIVE_V5.md",
+      "sha256": "edfdb9a0a0deccd886363739e3918481a3e0ea913ac947d28da418f72a40861f"
+    },
+    {
+      "bytes": 765113,
+      "file": "harness_runtime_v1.py",
+      "sha256": "339e8a2888693d341ff372103527daec12b6985e998c3f178d7fadfa45ed6b77"
+    },
+    {
+      "bytes": 20000,
+      "file": "validate_execution_ledger_v6.py",
+      "sha256": "d5b700af653b33edd16c19ab5539469e03ebbc6e8735beaccef6056bf6225305"
+    }
+  ],
+  "baseline": "V3.6 STABLE",
+  "blackbox_corrective": "RC16.23.4-post-blackbox-evidence-campaign-hardening",
+  "blackbox_status": "PENDING: exact package clean replay first; then one fresh external contractual Black-Box campaign on RC16.23.8 exact bytes; promotion forbidden.",
+  "changes": [
+    "Unknown/unclassified Pilotage issues persist BLOCKED_FATAL; ordinary mutation requires explicit recover-fatal or a new run.",
+    "Pilotage Business Builder is secretary-only: business conclusions remain UNSET until supplied by the competent authority/model.",
+    "Style→Axes materializes an independent structural inventory for lines/starters/replay slots; the Builder no longer derives coverage from the render it later audits.",
+    "Same-Axe starters are never auto-grouped; equivalence and replay cardinality must be declared by the upstream authority.",
+    "Every repair is bound to the exact FAIL receipt, parent business payload, issue-set hash and repair-scope hash; stale/forged parents, no-op patches and A→B→A cycles are rejected.",
+    "Issues carry owner/domain/budget/severity metadata at production time; known orchestration prerequisites stop before Pilotage and independent diagnostics are aggregated when evaluable.",
+    "Pilotage authoritative outputs are confined to the flat run directory and immutable by content; critical writes are atomic and mutating commands are serialized per run.",
+    "Append-only journal and validator instrument traces use process locks so seq remains unique/contiguous under concurrent writers.",
+    "PRESENTATION_RENDER repair budget is scoped to the exact render lineage; business budget remains independently bounded.",
+    "Terminal authorization creates a content-addressed immutable terminal payload; terminal-output re-verifies its SHA-256 before user-visible emission.",
+    "MCB1 conservation and V2 proof floors remain active; RC16.23 does not add a card database or a second business authority.",
+    "Crash consistency binds harness_state, checkpoint and CHECKPOINT_WRITTEN journal evidence to the same state hash; divergence is fail-closed and OS locks are verified to release after process death.",
+    "Black-Box corrective separates exact Source integrity from a projection-contract fingerprint so the runtime cannot reject its own compatible package because of unrelated whole-file edits.",
+    "output-policy enforces STATUS_ONLY unless the exact terminal chain is completed and STOP_OUTPUT is authorized; blocked FastPath output cannot fall through to a free-form decklist.",
+    "Visual obligations declared by VISUAL_ASSETS_BOUND are rechecked at the terminal boundary; required main/signature carousels cannot disappear before authorization.",
+    "SINGLE_SEMANTIC_ENTRY: each non-derivable business fact is authored once by its competent authority; technical copies are compiler-owned.",
+    "Pilotage Semantic Compiler generates technical IDs, bindings, starter/resource propagation, resource ledgers, replay/step containers, compiler-derivable MCB bindings/cold projections, hashes and coverage from minimal semantic input.",
+    "Semantic template is derived from the independent Style→Axes inventory; the model does not retype Axe/starter identity or technical bureaucracy.",
+    "Compiler never invents a starter, branch, target, ruling, claim or strategic choice; missing real semantic input fails closed with COMPILER_NEEDS_SEMANTIC_INPUT.",
+    "Mechanical contradictions survive compilation and are rejected by MCB/validators; compiler cannot silently repair false lethal or illegal resource use.",
+    "Render Compiler materializes Structure-owned quote/card-carousel/mini-carousel/component plumbing from already-authorized content and visual obligations.",
+    "ADMIN_DERIVABLE defects are not model repair work and do not consume business repair budget.",
+    "Semantic Compiler emits a content-addressed provenance receipt bound to exact run/deck/render/inventory/semantic/business payload; dry-run accepts this nominal provenance and retains Builder/Merge only as legacy compatibility.",
+    "Frozen Render Contract is canonical: downstream validation rechecks authoritative base inputs without rederiving mutable component continuity; stale render/policy hashes fail closed.",
+    "Unambiguous gate authority/status are derived by the runtime; explicit wrong low-level values remain fail-closed.",
+    "Render Semantic Compiler deterministically materializes deck grouping, line wrapping, quote cardinality and applicable component plumbing from authoritative inputs without inventing business content.",
+    "dispatch-run resumes the exact active run with checkpoint/hash/lease verification and journals RUN_RESUMED/resume_count instead of creating conversational-only continuation.",
+    "continuation-policy implements NO EARLY HANDOFF: CONTINUE_NOMINAL/AUTO_RECOVERABLE/BUSINESS_REPAIRABLE have handoff_allowed=false; USER_REQUIRED/FATAL may hand off.",
+    "ADMIN_DERIVABLE remains runtime-owned; compiler still refuses to invent starter, target, ruling, branch, claim or lethal proof.",
+    "RC16.23.3 Secretariat Freeze rejects new derivable MODEL_OWNED fields.",
+    "Hard handoff-check refuses end-turn while continuation is recoverable.",
+    "Terminal visual survival requires deterministic emission anchors, not component existence alone.",
+    "Unknown Main Deck card types no longer default to MONSTER; flat Main rendering is used until authoritative typing exists.",
+    "Material ruling evidence and claim-certainty barriers prevent structural false positives.",
+    "Mechanical proof is produced only by real validator run + receipt verification.",
+    "Black-Box FULL_PASS is strict AND of Terminal, Continuity, Semantic and Presentation dimensions.",
+    "RC16.23.3 Black-Box Hardening: Secretariat Freeze, hard handoff barrier, actual terminal component emission proof, snapshot-derived decklist grouping/fallback, ruling/claim certainty barriers, real persisted mechanical proof, retry collapse, and strict Black-Box 4D aggregation.",
+    "RC16.23.4 adds request-level campaign aggregation above run-level 4D; prior aborted/failed attempts prevent CLEAN_PASS even when a later run is FULL_PASS.",
+    "RC16.23.4 adds a pre-bootstrap handoff barrier: a new full request cannot end before dispatch-run has materialized a campaign attempt.",
+    "Main Deck card grouping now requires exact-snapshot authoritative metadata provenance; narrative conformance is not a card-type authority and missing metadata degrades safely to flat Main.",
+    "Runtime compiles calculable carousel applicability from image capability plus already-structured climax obligations rather than trusting contradictory administrative booleans.",
+    "LETHAL damage contributors are bound to explicit or mechanically-derived actors and must remain identifiable in the visible damage step.",
+    "User-visible execution trace is compiled from material journal/state evidence; terminal validation/receipt/STOP checkpoints cannot be invented by prose.",
+    "No new permanent Source file was introduced; the existing INSTRUCTION_GENERALE_RC16_23.md is included in the flat Source installation set so deployment does not depend on a separate project-instruction installation step. Campaign, metadata-binding and compiled-trace artifacts remain runtime-generated flat artifacts only.",
+    "RC16.23.5 projects model-owned semantic conditions/actions into compiler-owned visible condition and step bindings instead of requiring duplicated render bureaucracy.",
+    "RC16.23.5 continuation policy guarantees every AUTO_RECOVERABLE state carries at least one legal repair route or is deterministically reclassified.",
+    "RC16.23.5 continuity accounting distinguishes USER_REQUIRED/NOMINAL/RECOVERY/UNWANTED resumes; legitimate USER_REQUIRED resume is not a continuity failure by itself.",
+    "RC16.23.5 automatically rebinds direction-dependent functional intent after an explicit user direction change.",
+    "RC16.23.5 compiles visual component refs from already-bound authoritative visual assets and assembles derivable Final Validation bundle members from current state.",
+    "RC16.23.5 materializes a final controlled-emission structural receipt and Black-Box PRESENTATION_PASS requires this post-composition proof.",
+    "RC16.23.5 preserves campaign truth: a later successful run cannot erase prior aborted/failed attempts.",
+    "RC16.23.6 requires exact environment card-pool binding for every Main/Extra/Side identity before Narrative or later gates may close; TCG existence/model assertion is not environment membership.",
+    "RC16.23.6 validates Synchro/Fusion summon material contracts from provenance-bound rule evidence tied to the exact semantic payload; named materials, tuner roles, levels and scoped name substitutions fail closed.",
+    "RC16.23.6 forbids internal abort of WAITING_USER_INPUT runs; semantic user resolution must continue same-run unless the user explicitly requests abort/fresh.",
+    "RC16.23.6 separates controlled rich-component inclusion from external host visibility; markers/plans alone cannot yield Presentation/Full Black-Box PASS.",
+    "RC16.23.6 packages a fingerprint-locked full Link Evolution 2020 card-pool snapshot and bind-card-pool resolves it locally by default; missing or mismatched snapshot fails closed and no model-authored availability booleans are accepted.",
+    "RC16.23.6 packaged Link Evolution 2020 full card-pool snapshot: bind-card-pool auto-loads the local trusted catalog; per-run model availability declarations are not required.",
+    "RC16.23.7 enforces exact Link Evolution banlist quantity ceilings against the terminal deck snapshot; environment membership never substitutes for ratio legality.",
+    "RC16.23.7 summon-material validation applies provenance-bound effective material properties before evaluating contracts, including conditional level/name/tuner changes.",
+    "RC16.23.7 validates classification evidence for structural self-consistency while VALIDATION_CANONIQUE_REMIXE remains the sole business classifier; direction conflicts materialize USER_REQUIRED instead of silent closure.",
+    "RC16.23.7 separates player-visible render tokens from compiler-owned semantic lineage anchors and projects semantic line identity deterministically into Render/Pilotage.",
+    "RC16.23.7 blocks derivable/admin abort-as-repair so repair continues same-run; historical campaign truth remains cumulative.",
+    "RC16.23.7 places the nominal CLI entrypoint after all active overrides so import and CLI expose the same final implementation.",
+    "RC16.23.7 preserves planned != controlled-emitted != host-visible and keeps host visibility external-only unless exact host evidence is bound.",
+    "RC16.23.7 Differential Regression Gate compares structured parent/candidate capability observations over the cumulative golden corpus; VERIFIED(parent) and degraded(candidate) is BUILD FAIL.",
+    "RC16.23.8 resolves authoritative banlist source binding from SYSTEM_MANIFEST_V4.json and rejects missing or SHA-mismatched sources; model wrapper/monkeypatch repair is not a nominal path.",
+    "RC16.23.8 rejects self-contradictory classification evidence where the claimed non-structural canonical identity is also described as architecture-destroying when withdrawn; business classification authority remains VALIDATION_CANONIQUE_REMIXE.",
+    "RC16.23.8 separates semantic visual applicability from technical image availability: an unavailable image capability cannot silently turn a required main/signature carousel into NOT_APPLICABLE or local PRESENTATION_PASS.",
+    "RC16.23.8 enforces certainty monotonicity from semantic authority to render: CONDITIONAL/UNVERIFIED claims cannot be strengthened into guaranteed/garanti wording.",
+    "RC16.23.8 treats an unclosed end-to-end Sora Kraken→Tiger→Sabre-Tooth→Wolf damage proof as conditional; exact guaranteed totals require a closed sequential proof rather than fragmented local material checks."
+  ],
+  "development_test_status": "RC16.23.8 deterministic workspace closure PASS: targeted 12/12; Red-Team 9/9; mutants 5/5 killed; Sora conditional-fallback E2E PASS; Yusei direction-conflict same-run integration PASS; Differential Gate PASS 25/25 candidate with 0 protected loss; inherited nominal regression 13/13 PASS; RC16.23.6/7 guards PASS; historical mutants 96/96 killed. Exact package replay pending.",
+  "instruction_char_limit": "<8000 bytes; current 7848",
+  "ledger_validator_version": "v6.1",
+  "parent_candidate": "RC16.23.7 Post-Black-Box Corrective (runtime 3b1c2442701c022ef86f8c9f5610676ab24e39578d369e904700d654ffb1186b)",
+  "release": "RC16.23.8",
+  "runtime_change": "RC16.23.8 Terminal Corrective Closure: manifest-owned nominal banlist binding without model wrapper, classification-evidence contradiction guard with same-run direction resolution preservation, visual applicability separated from image availability, certainty monotonicity from semantic claim to render, and fail-closed conditional fallback when a unique sequential Sora OTK proof is not closed.",
+  "runtime_code": [
+    "harness_runtime_v1.py",
+    "validate_execution_ledger_v6.py"
+  ],
+  "runtime_version": "RC16.23.8",
+  "status": "PACKAGE_REPLAY_PENDING_NON_PROMOTABLE",
+  "system": "Yu-Gi-Oh Character Deck System"
+}

@@ -1,0 +1,152 @@
+{
+  "system": "Yu-Gi-Oh Character Deck System",
+  "release": "V5",
+  "runtime_version": "V5",
+  "baseline": "V3.6 STABLE",
+  "parent_candidate": "RC16.23.8",
+  "parent_package_sha256": "90cb9f90c78e86725bb24a27c054f3603df20b670e961267bd62357b764dfb3e",
+  "status": "PACKAGE_REPLAY_PASS_NETWORK_SMOKE_BLOCKED_BLACKBOX_PENDING_NON_PROMOTABLE",
+  "architecture": "api -> runtime -> model semantic decision -> card_data -> compiler -> validator -> runtime publication gate",
+  "runtime_code": [
+    "api.py",
+    "contracts.py",
+    "card_data.py",
+    "compiler.py",
+    "validator.py",
+    "runtime.py"
+  ],
+  "legacy_runtime_retired": [
+    "harness_runtime_v1.py",
+    "validate_execution_ledger_v6.py",
+    "HARNESS_EXECUTION_CHAT_V3.md",
+    "REGISTRE_EXECUTION_ARTEFACTS_V7.md"
+  ],
+  "card_facts_provider": {
+    "default": "YGOPRODeck API v7 cardinfo.php",
+    "cache_required": true,
+    "link_evolution_legality_authority": "packaged pool + packaged banlist",
+    "live_network_smoke_status": "BLOCKED_IN_THIS_EXECUTION_ENVIRONMENT_DNS"
+  },
+  "development_test_status": "52/52 full regression PASS after legacy retirement; branch-aware coverage 87% overall; compiler 96%, validator 78%, runtime 80%; 5/5 targeted mutants killed; G7 structured differential guards PASS; exact Sources package replay PASS on clean extraction.",
+  "blackbox_status": "PENDING_EXTERNAL_INDEPENDENT_BLACKBOX_AFTER_EXACT_PACKAGE_REPLAY; promotion forbidden",
+  "active_files": [
+    {
+      "file": "BANLIST_LINK_EVOLUTION_2020.md",
+      "bytes": 10510,
+      "sha256": "3589519b3362b3a438fba6fbe2f3c13ac14a29408c83816b2190673bcfe18fc3"
+    },
+    {
+      "file": "CONTEXTE_DECKS_YUGIOH_LINK_EVOLUTION_2020.md",
+      "bytes": 2570,
+      "sha256": "01d3b56dc7f74807928223886bd5ada09299f864d65f091e659b1f338b41187c"
+    },
+    {
+      "file": "FRESH_REPLAY_FINAL_GATE_V4.md",
+      "bytes": 7731,
+      "sha256": "d5f9486bb6b617fe996d93840217db7377e0515c33a70806776bb419eac2f845"
+    },
+    {
+      "file": "GAME_RULES_LINK_EVOLUTION_2020_V1.md",
+      "bytes": 9312,
+      "sha256": "6b87076525930c60473eb54ac2e73729f3678c039452952ff458a4834977db48"
+    },
+    {
+      "file": "HOOK_ANCRAGE_REFACTOR_MULTI_SYSTEMES_V17.md",
+      "bytes": 9779,
+      "sha256": "dd4a0c18dde6babafd34f285d667eed425c93d8da975020fa027f7a2e109aac9"
+    },
+    {
+      "file": "HOOK_EXPLORATION_CONCEPTUELLE_DECKS_PERSONNAGES_V7.md",
+      "bytes": 3638,
+      "sha256": "96f2e3e8dc017d308ce566a53bf17dfc39c21de865a35ea4f8c034c2a960b51a"
+    },
+    {
+      "file": "HOOK_STYLE_AXES_CONSTRUCTION_DECKS_PERSONNAGES_V17.md",
+      "bytes": 12373,
+      "sha256": "0d63477d5d4959c77dc0d3e465a19606e70fd2b2c9dbbd8694f54589bfc604ca"
+    },
+    {
+      "file": "INSTRUCTION_GENERALE_RC16_23.md",
+      "bytes": 5941,
+      "sha256": "6191a80c2802fe90ed89341829e40f7603ca2729183d7809146cd50de11182ef"
+    },
+    {
+      "file": "LINK_EVOLUTION_2020_CARD_POOL.json",
+      "bytes": 213268,
+      "sha256": "fc6fcbf51fef840a78affea500f0aecc7f1f97921e27c7ca5faaa143c1aaf68b"
+    },
+    {
+      "file": "SEMANTIC_RULING_CONTRACT_V1.md",
+      "bytes": 9250,
+      "sha256": "371f4f31cf2aec5a74e756aef7169c5904da2d5828c5c720e73e503c25a42c3b"
+    },
+    {
+      "file": "STRUCTURE_AXES_COMBOS_DECKS_PERSONNAGES_V1.md",
+      "bytes": 40845,
+      "sha256": "babd4633f7e1488956c65a3e855702d2cc86af6db37216f6b3382890e078669f"
+    },
+    {
+      "file": "STRUCTURE_REPONSES_DECKS_PERSONNAGES_V50.md",
+      "bytes": 41468,
+      "sha256": "e08b47f7ddfad00dd2a01535f1ba6727b8355ce09b01af447cf0190b0cc8579f"
+    },
+    {
+      "file": "STYLE_DECKS_PERSONNAGE_LINK_EVOLUTION_V39.md",
+      "bytes": 6299,
+      "sha256": "a25bc0af63785922ae8ea09da0b755bcd3e7b5dd2dce912be114b86d9d75780e"
+    },
+    {
+      "file": "VALIDATION_CANONIQUE_REMIXE_V15.md",
+      "bytes": 12079,
+      "sha256": "5b7f1d6a48f90a4936e20114a24eb2c31c22011f162fccf06b03be5413f90028"
+    },
+    {
+      "file": "VALIDATION_FINALE_DECKS_PERSONNAGES_V41.md",
+      "bytes": 44468,
+      "sha256": "d7f909ab6780a6753d7c8387ea708d6d4b7bb150d23f4171bf9b080f821cc5f9"
+    },
+    {
+      "file": "VALIDATION_PILOTAGE_LIGNES_DECKS_PERSONNAGES_V1.md",
+      "bytes": 27777,
+      "sha256": "37bb0b59a168d516dbed5f8254ac354aada5e7885c822a67132c336e4e041331"
+    },
+    {
+      "file": "VALIDATION_PROGRESSION_NARRATIVE_V5.md",
+      "bytes": 6386,
+      "sha256": "edfdb9a0a0deccd886363739e3918481a3e0ea913ac947d28da418f72a40861f"
+    },
+    {
+      "file": "api.py",
+      "bytes": 930,
+      "sha256": "ac2ab3fa6252547065e049d2399e3e492fd5a47d62775300d60a254108d9b805"
+    },
+    {
+      "file": "card_data.py",
+      "bytes": 11052,
+      "sha256": "0b44eaa25e1fb26e5d183680a878f76d1f1d822c1b9934a8c149692e38cbcd3b"
+    },
+    {
+      "file": "compiler.py",
+      "bytes": 9197,
+      "sha256": "57f4ddc8e660956f4fb1c641d914cf78cb6d58100c253e44ca2a6b517a4d00ee"
+    },
+    {
+      "file": "contracts.py",
+      "bytes": 13785,
+      "sha256": "75e6ab98b9616a21ce19fc1026e686f08d140933940d5135f8e97f6e7ae591ed"
+    },
+    {
+      "file": "runtime.py",
+      "bytes": 21915,
+      "sha256": "5754c2985635bdfc063468b3981b09194dab57747024552ba0bde7ddbf54b60c"
+    },
+    {
+      "file": "validator.py",
+      "bytes": 28706,
+      "sha256": "c651b6863357cbcc6f26a1671b96389770cb432569012baea2fe41f3938b4ad2"
+    }
+  ],
+  "package_replay_status": "PASS_ON_CLEAN_EXTRACTION_EXACT_BYTES",
+  "external_provider_smoke_status": "BLOCKED_BY_EXECUTION_ENVIRONMENT_DNS; provider contract verified offline with injected HTTP response; live endpoint verified by web research but not executed by Python runtime here.",
+  "promotion": "FORBIDDEN_UNTIL_EXTERNAL_PROVIDER_SMOKE_WHERE_REQUIRED_AND_INDEPENDENT_BLACKBOX"
+}

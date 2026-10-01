@@ -1,0 +1,154 @@
+{
+  "schema": "ygo-corrective-on-v5-change-surface-v2",
+  "scope_root": "worktree",
+  "parent": "V5 exact",
+  "target": "NOT_ASSIGNED",
+  "go": "NO",
+  "normative_human_contract": "governance/CHANGE_SURFACE_CONTRACT_CORRECTIVE_ON_V5_V1.md",
+  "must_touch_by_corrective": [
+    "source/contracts.py",
+    "source/card_data.py",
+    "source/compiler.py",
+    "source/validator.py",
+    "source/runtime.py"
+  ],
+  "may_touch_if_required": [
+    "source/api.py",
+    "tests/**",
+    "fixtures/**"
+  ],
+  "may_touch_at_integration_gate_only": [
+    "source/INSTRUCTION_GENERALE_RC16_23.md",
+    "source/SYSTEM_MANIFEST_V4.json"
+  ],
+  "no_new_permanent_product_file_without_prego_amendment": true,
+  "immutable_workspace_surfaces": [
+    "baseline_v5/source/**",
+    "reference_v4/source/**",
+    "authority/**"
+  ],
+  "no_touch_business_authorities_without_prego_amendment": [
+    "source/BANLIST_LINK_EVOLUTION_2020.md",
+    "source/CONTEXTE_DECKS_YUGIOH_LINK_EVOLUTION_2020.md",
+    "source/FRESH_REPLAY_FINAL_GATE_V4.md",
+    "source/GAME_RULES_LINK_EVOLUTION_2020_V1.md",
+    "source/HOOK_ANCRAGE_REFACTOR_MULTI_SYSTEMES_V17.md",
+    "source/HOOK_EXPLORATION_CONCEPTUELLE_DECKS_PERSONNAGES_V7.md",
+    "source/HOOK_STYLE_AXES_CONSTRUCTION_DECKS_PERSONNAGES_V17.md",
+    "source/LINK_EVOLUTION_2020_CARD_POOL.json",
+    "source/SEMANTIC_RULING_CONTRACT_V1.md",
+    "source/STRUCTURE_AXES_COMBOS_DECKS_PERSONNAGES_V1.md",
+    "source/STRUCTURE_REPONSES_DECKS_PERSONNAGES_V50.md",
+    "source/STYLE_DECKS_PERSONNAGE_LINK_EVOLUTION_V39.md",
+    "source/VALIDATION_CANONIQUE_REMIXE_V15.md",
+    "source/VALIDATION_FINALE_DECKS_PERSONNAGES_V41.md",
+    "source/VALIDATION_PILOTAGE_LIGNES_DECKS_PERSONNAGES_V1.md",
+    "source/VALIDATION_PROGRESSION_NARRATIVE_V5.md"
+  ],
+  "task_surfaces": {
+    "T1": {
+      "must": [
+        "source/contracts.py"
+      ],
+      "may": [
+        "source/compiler.py",
+        "source/runtime.py"
+      ]
+    },
+    "T2": {
+      "must": [
+        "source/card_data.py"
+      ],
+      "may": [
+        "source/contracts.py",
+        "source/runtime.py"
+      ]
+    },
+    "T3": {
+      "must": [
+        "source/compiler.py"
+      ],
+      "may": [
+        "source/contracts.py"
+      ]
+    },
+    "T4": {
+      "must": [
+        "source/validator.py"
+      ],
+      "may": [
+        "source/contracts.py",
+        "source/compiler.py"
+      ]
+    },
+    "T5": {
+      "must": [
+        "source/validator.py",
+        "source/compiler.py"
+      ],
+      "may": [
+        "source/contracts.py",
+        "source/card_data.py"
+      ]
+    },
+    "T6": {
+      "must": [
+        "source/validator.py",
+        "source/compiler.py"
+      ],
+      "may": [
+        "source/contracts.py"
+      ]
+    },
+    "T7": {
+      "must": [
+        "source/validator.py",
+        "source/compiler.py"
+      ],
+      "may": [
+        "source/runtime.py",
+        "source/contracts.py"
+      ]
+    },
+    "T8": {
+      "must": [
+        "source/runtime.py"
+      ],
+      "may": [
+        "source/api.py",
+        "source/card_data.py",
+        "source/compiler.py",
+        "source/contracts.py"
+      ]
+    },
+    "T9": {
+      "must": [],
+      "may_integration_only": [
+        "source/INSTRUCTION_GENERALE_RC16_23.md",
+        "source/SYSTEM_MANIFEST_V4.json"
+      ]
+    }
+  },
+  "forbidden": [
+    "restore or import harness_runtime_v1.py into product",
+    "hardcode Shooting Quasar Dragon or another named card as validator fix",
+    "treat one provider outage as global facts unavailability when another admissible route exists",
+    "make low-level MCB/resource/snapshot/proof fields model-writable",
+    "allow model output to control next stage, retry policy, provider selection, PASS or publication authorization",
+    "require user continue/reprend while an internally recoverable MODEL or DATA route remains",
+    "route DATA or RUNTIME issues into semantic model repair",
+    "modify reference_v4/source",
+    "modify baseline_v5/source",
+    "add a permanent product module without PRE-GO amendment"
+  ],
+  "rules": [
+    "actual_changed_surface subset authorized surface",
+    "NO_TOUCH intersection actual diff must be empty",
+    "business authority change requires PRE-GO amendment before mutation",
+    "api.py is MAY-TOUCH only",
+    "instruction/manifest integration-gate-only",
+    "runtime owns deterministic continuous-run controller",
+    "model-call reasons are closed/runtime-owned",
+    "worktree remains parent-identical while PRE_GO"
+  ]
+}
