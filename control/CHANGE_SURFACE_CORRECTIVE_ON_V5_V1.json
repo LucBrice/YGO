@@ -2,8 +2,8 @@
   "schema": "ygo-corrective-on-v5-change-surface-v2",
   "scope_root": "worktree",
   "parent": "V5 exact",
-  "target": "NOT_ASSIGNED",
-  "go": "NO",
+  "target": "V5.1",
+  "go": "YES",
   "normative_human_contract": "governance/CHANGE_SURFACE_CONTRACT_CORRECTIVE_ON_V5_V1.md",
   "must_touch_by_corrective": [
     "source/contracts.py",

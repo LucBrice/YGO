@@ -8,11 +8,42 @@
 - Combo functional reference : V4 RC16.23.8 exact
 - V4 SHA-256 : `90cb9f90c78e86725bb24a27c054f3603df20b670e961267bd62357b764dfb3e`
 - Stable baseline : V3.6 STABLE
-- Target : NOT_ASSIGNED
-- PRE-GO : FROZEN
-- GO : NO
-- Current gate : PRE_GO
-- Promotion : FORBIDDEN
+- Target : **V5.1** (assigned via explicit `/go V5.1`)
+- PRE-GO : superseded by GO
+- GO : YES
+- Current gate : G0 CLOSED → entering G1
+- Promotion : FORBIDDEN until G9 PASS
+
+## G0 — Characterization (CLOSED, no product mutation)
+
+Command executed: `python3 tools/verify_workspace.py --require-go` →
+`workspace_status=PASS`, `worktree_changed=[]` (worktree still byte-identical
+to `baseline_v5/source` after G0).
+
+Command executed: `python3 tests/test_g0_characterization.py -v` → `OK`, 4/4
+tests, against the exact unmutated worktree:
+
+- `RedQuasarUnsupported.test_valid_quasar_materials_are_rejected_as_unsupported_today`
+  — EXECUTED_PASS (RED reproduced: `SYNCHRO_REQUIREMENT_UNSUPPORTED`,
+  owner RUNTIME, UNVERIFIED).
+- `GreenSynchroParentControl.test_plain_generic_synchro_header_still_resolves`
+  — EXECUTED_PASS (positive control: already-supported literal header still
+  resolves, proving the defect is isolated to the qualified clause).
+- `RedProviderFallback.test_single_provider_outage_blocks_with_no_fallback`
+  — EXECUTED_PASS (RED reproduced: single provider outage raises
+  `CARD_PROVIDER_UNAVAILABLE` with no alternate route attempted).
+- `RedModelMcbSecretariat.test_model_can_author_raw_mechanical_consequence_today`
+  — EXECUTED_PASS (RED reproduced: model-authored `operator/source/destination`
+  consequence fields are currently accepted by `semantic_draft_from_mapping`).
+
+12-capability V4↔candidate differential map materialized:
+`fixtures/V4_CAPABILITY_DIFFERENTIAL_MAP.md` (all 12 rows PLANNED, no PASS
+claimed yet — guards close per-gate at G3/G4/G5/G6/G7).
+
+RED-CONTINUOUS-HANDOFF (mandatory defect #4, D5/REQ-CR-027) is deliberately
+NOT characterized at G0: per `TEST_PROOF_MATRIX_CORRECTIVE_ON_V5_V2.md` §2 it
+is a G8 integration-level RED (continuous-run controller), not a unit-level
+one; materializing it requires the controller harness built at G8.
 
 ## Reconciled parent evidence
 
@@ -45,4 +76,8 @@ V5 exact historical evidence remains real : 52/52 full regression PASS after leg
 
 ## NEXT_STEP
 
-User must assign exact target via `GO <version>`. Then enter G0; do not patch before Quasar/provider/secretariat/control REDs + complete V4 12-capability characterization are materialized.
+G0 closed materially. Proceed to G1 (`contracts.py` ownership/schema) per
+`governance/PRE_GO_CORRECTIVE_ON_V5_V2.md` §3 and
+`governance/CHANGE_SURFACE_CONTRACT_CORRECTIVE_ON_V5_V1.md` T1. Do not patch
+`validator.py`/`compiler.py` combo logic (T3..T7) before T1 ownership
+boundaries are closed, per the gate order.

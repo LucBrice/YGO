@@ -133,5 +133,20 @@ Also replay V5 parent guards : six-module/thin API, canonical compile/stale, iss
 
 ## 8. Current execution status
 
-All corrective entries : `PLANNED/BLOCKED_BY_NO_GO`.
-Historical V5 exact : 52/52 parent regression PASS, 5/5 targeted mutants killed, 87% branch-aware coverage, exact package replay 52/52 PASS. These are parent evidence only.
+Target `V5.1`, GO `YES` (explicit `/go V5.1`). Historical V5 exact : 52/52
+parent regression PASS, 5/5 targeted mutants killed, 87% branch-aware
+coverage, exact package replay 52/52 PASS. These remain parent evidence only.
+
+### G0 — EXECUTED (no product mutation)
+
+| Entry | Gate | Command | Result |
+|---|---|---|---|
+| RED-QUASAR-UNSUPPORTED | G0 | `python3 tests/test_g0_characterization.py -v` (`RedQuasarUnsupported`) | EXECUTED_PASS — defect reproduced |
+| GREEN synchro parent control | G0 | same run (`GreenSynchroParentControl`) | EXECUTED_PASS |
+| RED-PROVIDER-FALLBACK | G0 | same run (`RedProviderFallback`) | EXECUTED_PASS — defect reproduced |
+| RED-MODEL-MCB-SECRETARIAT | G0 | same run (`RedModelMcbSecretariat`) | EXECUTED_PASS — defect reproduced |
+| 12-capability map | G0 | `fixtures/V4_CAPABILITY_DIFFERENTIAL_MAP.md` materialized | EXECUTED_PASS (inventory only, rows PLANNED) |
+| workspace diff | G0 | `python3 tools/verify_workspace.py --require-go` | EXECUTED_PASS — `worktree_changed=[]`, no product mutation |
+
+G1..G9 entries remain `PLANNED` until their gate executes; this table is
+updated in place per META-REQ-TEST-EVIDENCE (no verbal PASS).
